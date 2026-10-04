@@ -90,7 +90,7 @@ footer{margin-top:40px;font-size:.88rem;color:var(--muted)}
 @keyframes bob{50%{transform:translateY(-6px) rotate(-4deg)}}
 .cthumb{display:block;width:100%;max-width:340px;aspect-ratio:16/9;object-fit:cover;margin:12px auto 0;border:3px solid var(--ink);border-radius:8px;box-shadow:4px 4px 0 var(--ink);background:#000}
 .clabel{margin:14px 0 0;font-weight:900;font-size:.8rem;letter-spacing:.12em;color:var(--red)}
-.cname{margin:4px 0 0;font-family:var(--display);font-size:clamp(1.6rem,8vw,2.4rem);line-height:1;overflow-wrap:anywhere}
+.cname{margin:4px 0 0;font-family:var(--display);font-size:clamp(1.6rem,8vw,2.4rem);line-height:1;overflow-wrap:normal}
 .cby{margin:6px 0 0;font-weight:800;color:var(--muted)}
 .cavg{font-family:var(--display);font-size:clamp(2.6rem,14vw,4rem);margin-top:8px;color:var(--ink)}
 .cmeta{margin:0;font-weight:700;font-size:.9rem}
@@ -107,5 +107,45 @@ footer{margin-top:40px;font-size:.88rem;color:var(--muted)}
 .bar span{font-size:.55rem;font-weight:800;opacity:.7;line-height:1.1}
 .awards2{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
 .aw{padding:14px;min-width:0}.aw b{font-size:1.05rem}.aw .by{font-size:.82rem}.aw.wide{grid-column:1/-1;text-align:center;background:color-mix(in srgb,var(--red) 18%,var(--paper))}
-.awn{font-family:var(--display);font-size:clamp(1.05rem,4.6vw,1.3rem);line-height:1.1;margin-top:8px;overflow-wrap:anywhere}
+.awn{font-family:var(--display);font-size:clamp(1.05rem,4.6vw,1.3rem);line-height:1.1;margin-top:8px;overflow-wrap:normal}
 @media (max-width:420px){.rk{grid-template-columns:auto 56px 1fr auto}.rth{width:56px;height:56px}}
+
+/* ceremony (results presentation) */
+.cer-start{text-align:center}.cer-start .btn{margin-top:14px}
+.cer-skip{display:block;margin:14px auto 0;font:inherit;font-weight:800;color:var(--muted);background:none;border:0;text-decoration:underline;cursor:pointer;padding:8px}
+.cer-again{margin-top:16px}
+.cer-on,.cer-on body{overflow:hidden}
+.cer{position:fixed;inset:0;z-index:65;display:flex;flex-direction:column;background:radial-gradient(ellipse at 50% 30%,#3D3A8C 0,#1C1B33 60%,#100f22 100%);color:#FFE9A3;cursor:pointer;user-select:none;-webkit-user-select:none;padding:env(safe-area-inset-top,0px) 16px env(safe-area-inset-bottom,0px);outline:0}
+.cer-top{display:flex;align-items:center;gap:8px;padding:12px 0 0}
+.cer-prog{flex:1;font-weight:900;font-size:.8rem;letter-spacing:.1em;opacity:.6}
+.cer-btn{font:inherit;font-size:1.1rem;width:42px;height:42px;border-radius:50%;border:2px solid #FFE9A3;background:transparent;color:#FFE9A3;cursor:pointer}
+.cer-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;max-width:560px;width:100%;margin:0 auto;padding:12px 0;min-height:0;overflow:hidden}
+.cer-stage.in{animation:cerIn .4s ease-out}
+@keyframes cerIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.cer .cer-em,.cer-start .cer-em{font-size:3rem;line-height:1;margin:4px 0}
+.cer-kick{margin:0;font-weight:900;font-size:.78rem;letter-spacing:.16em;color:#FF6B88}
+.cer-t{margin:6px 0 0;font-family:var(--display);font-size:clamp(1.6rem,8vw,2.6rem);line-height:1.05;max-width:100%}
+.cer-start .cer-t{margin-top:4px}
+.cer-dsc{margin:8px 0 0;font-weight:700;opacity:.85}
+.cer-noms{display:flex;gap:10px;justify-content:center;margin-top:18px;width:100%}
+.cer-nom{margin:0;flex:1;max-width:160px;transition:opacity .4s,transform .4s,filter .4s}
+.cer-nom img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border:3px solid #FFE9A3;border-radius:6px;background:#000}
+.cer-nom figcaption{font-weight:800;font-size:.78rem;margin-top:4px;line-height:1.15}
+.cer-nom.lose{opacity:.3;filter:grayscale(1)}
+.cer-nom.win{transform:scale(1.08)}.cer-nom.win img{border-color:#FF6B88;box-shadow:0 0 0 3px #FF6B88}
+.cer-noms.solo{margin:0 0 6px}.cer-noms.solo .cer-nom{max-width:200px}
+.cer-res{margin-top:18px;min-height:5.5em;width:100%}
+.cer-goes{margin:0;font-weight:800;font-style:italic;opacity:.8}
+.cer-goes.pulse{animation:cerP .5s ease-in-out infinite alternate}
+@keyframes cerP{to{opacity:.35}}
+.cer-res.on{animation:cerWin .45s cubic-bezier(.2,1.4,.4,1)}
+@keyframes cerWin{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
+.cer-win{font-family:var(--display);font-size:clamp(1.7rem,9vw,2.8rem);line-height:1.05;color:#FFD23F;max-width:100%;overflow-wrap:normal}
+.cer-meta{margin:6px 0 0;font-weight:800}
+.champ .cer-win{font-size:clamp(2rem,11vw,3.4rem)}
+.cer-hint{margin:0;padding:8px 0 64px;text-align:center;font-weight:800;font-size:.85rem;opacity:.6;min-height:1.4em}
+.cer-rank{list-style:none;padding:0;margin:16px 0;width:100%;max-width:340px;display:grid;gap:8px}
+.cer-rank li{display:grid;grid-template-columns:2rem 1fr auto;gap:8px;align-items:center;font-weight:800;border:2px solid #FFE9A3;border-radius:6px;padding:8px 10px;text-align:left}
+.cer-rank b{font-family:var(--display);font-weight:400;font-size:.95rem}
+.cer .btn{cursor:pointer}
+@media (prefers-reduced-motion:reduce){.cer-stage.in,.cer-res.on,.cer-goes.pulse{animation:none}}
