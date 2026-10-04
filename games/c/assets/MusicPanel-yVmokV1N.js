@@ -1,4 +1,4 @@
-import{u,p as d,m as r,t as y,s as m,a as h}from"./index-CojQLmnQ.js";function f(c){const x=y(),i=document.createElement("div");i.style.cssText="position:fixed;left:8px;right:8px;bottom:12px;z-index:30;padding:10px;font:14px monospace;color:#f1efe8;background:rgba(18,21,31,.94);border:1px solid #2a2e3d;border-radius:6px;display:flex;flex-direction:column;gap:10px",i.innerHTML=`
+import{u,p as d,m as r,t as y,s as m,a as h}from"./index-Dc7UoP5D.js";function f(c){const x=y(),i=document.createElement("div");i.style.cssText="position:fixed;left:8px;right:8px;bottom:12px;z-index:30;padding:10px;font:14px monospace;color:#f1efe8;background:rgba(18,21,31,.94);border:1px solid #2a2e3d;border-radius:6px;display:flex;flex-direction:column;gap:10px",i.innerHTML=`
     <div style="display:flex;gap:8px">
       <select data-k style="flex:1;min-height:44px;font:inherit;background:#0b0d14;color:inherit;border:1px solid #2a2e3d">${x.map(t=>`<option value="${t}"${t===c?" selected":""}>${t}</option>`).join("")}</select>
       <button data-play style="min-width:84px;min-height:44px;font:inherit">Play</button>
