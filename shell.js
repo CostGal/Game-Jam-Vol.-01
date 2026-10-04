@@ -19,6 +19,11 @@
     if(e.data.title) document.title=e.data.title;
   });
 
+  /* ---------- 21:30: everyone on the site is taken to the results (the ceremony starts on its own) ---------- */
+  (function(){ const AT=new Date("2026-10-04T21:30:00+03:00").getTime(), left=AT-Date.now();
+    if(left>0 && left<2147483647) setTimeout(()=>{ let cur=""; try{ cur=view.contentWindow.location.pathname; }catch(e){}
+      if(!/results\.html$/.test(cur)){ view.src="results.html"; history.replaceState(null,"","/?p=results.html"); } }, left+1500); })();
+
   /* ---------- radio ---------- */
   const audio=document.getElementById("bgm"), pill=document.getElementById("musicBtn");
   const rCover=document.getElementById("rCover"), rName=document.getElementById("musicLbl"), rArtist=document.getElementById("rArtist"), rPlay=document.getElementById("rPlay");
@@ -27,7 +32,8 @@
   let actx=null, an=null, gain=null, buf=null, prev=new Float32Array(12), mx=40, beat=0, hit=0, lastHit=0;
   let vol=0.8, muted=false; try{ const v=parseFloat(localStorage.getItem("gj_radio_vol")); if(v>=0&&v<=1) vol=v; muted=localStorage.getItem("gj_radio_mute")==="1"; }catch(e){}
   const reduce=!matchMedia("(prefers-reduced-motion: no-preference)").matches;
-  function applyVol(){ const g=muted?0:vol; if(gain){ try{ gain.gain.setTargetAtTime(g,actx.currentTime,0.02); }catch(e){ gain.gain.value=g; } } audio.volume = gain? 1 : g; }
+  const MASTER=0.45;   // whole-site music level (the slider works inside it)
+  function applyVol(){ const g=muted?0:vol*MASTER; if(gain){ try{ gain.gain.setTargetAtTime(g,actx.currentTime,0.02); }catch(e){ gain.gain.value=g; } } audio.volume = gain? 1 : g; }
   function setup(){
     if(actx) return;
     try{
@@ -88,7 +94,7 @@
     const cur=list.querySelector(".rd-it.on"); if(cur) list.scrollTop=cur.offsetTop-list.offsetTop-6;
   }
   pill.querySelector("#rOpen").onclick=openRadio; pill.querySelector("#rInfo").onclick=openRadio;
-  if(R.length){ let i0=0; try{ if(localStorage.getItem("gj_radio_pl")!=="v17"){ localStorage.setItem("gj_radio_pl","v17"); localStorage.setItem("gj_radio_i","0"); } i0=parseInt(localStorage.getItem("gj_radio_i")||"0",10)||0; }catch(e){} load(i0%R.length,false); audio.volume=muted?0:vol; audio.play().then(()=>{ armed=false; paint(); }).catch(paint); }
+  if(R.length){ let i0=0; try{ if(localStorage.getItem("gj_radio_pl")!=="v17"){ localStorage.setItem("gj_radio_pl","v17"); localStorage.setItem("gj_radio_i","0"); } i0=parseInt(localStorage.getItem("gj_radio_i")||"0",10)||0; }catch(e){} load(i0%R.length,false); audio.volume=muted?0:vol*MASTER; audio.play().then(()=>{ armed=false; paint(); }).catch(paint); }
 
   /* ---------- beat → pushed into the page inside the iframe + the shell ---------- */
   const root=document.documentElement; let last=performance.now(), lastSet=-1;
@@ -137,5 +143,5 @@
   }
   window.GJ_TOUR=openTour;
   let seen=""; try{ seen=localStorage.getItem("gj_seen")||""; }catch(e){}
-  if(seen!==VERSION && !/[?&]notour/.test(location.search)) setTimeout(openTour,1400);
+  if(seen!==VERSION && !/[?&]notour/.test(location.search) && !/results/.test(location.search)) setTimeout(()=>{ let cur=""; try{ cur=view.contentWindow.location.pathname; }catch(e){} if(!/results\.html$/.test(cur)) openTour(); },1400);
 })();
