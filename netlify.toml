@@ -1,3 +1,9 @@
 # Static site: no build step. Netlify publishes the repo root on every push.
 [build]
   publish = "."
+
+# short link straight to the results / ceremony
+[[redirects]]
+  from = "/results"
+  to = "/?p=results.html"
+  status = 302
