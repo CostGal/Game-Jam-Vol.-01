@@ -1,0 +1,686 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --text: #e7cfae;
+  --bright: #f2dab8;
+  --line: rgba(206, 108, 56, 0.75);
+  --terra: #ce6c38;
+  --terra-light: #ec9c62;
+  --red: #ff6a5a;
+  --amber: #ffdcaa;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;   /* η πραγματική ορατή οθόνη (χωρίς τις μπάρες του browser) */
+  overflow: hidden;
+  background: #000;
+  color: var(--text);
+  font-family: Georgia, 'Times New Roman', serif;
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  position: fixed;
+  inset: 0;
+}
+
+#game {
+  position: fixed;
+  inset: 0;
+  display: block;
+  touch-action: none;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.invisible {
+  visibility: hidden;
+}
+
+/* ---- Οθόνες ---- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  padding: calc(var(--safe-top) + 24px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 24px) calc(var(--safe-left) + 16px);
+  text-align: center;
+  background: #000;
+  touch-action: none;
+  animation: fade-in 0.5s ease-out;
+}
+
+#menu h1 {
+  font-size: clamp(2rem, 11vw, 3.4rem);
+  font-weight: normal;
+  letter-spacing: 0.24em;
+  margin-right: -0.24em; /* αντισταθμίζει το letter-spacing για σωστό κεντράρισμα */
+  color: var(--terra-light);
+  text-shadow: 0 0 22px rgba(206, 108, 56, 0.45);
+  white-space: nowrap;
+}
+
+#menu .meander:last-of-type {
+  margin-bottom: 1.4rem;
+}
+
+.lead {
+  font-style: italic;
+  line-height: 1.6;
+  opacity: 0.75;
+  margin-bottom: 0.6rem;
+}
+
+.objective {
+  max-width: 320px;
+  font-family: system-ui, sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  opacity: 0.75;
+  margin-bottom: 0.8rem;
+}
+
+.small-label {
+  font-family: system-ui, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+
+.headphones {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.6rem;
+  font-family: system-ui, sans-serif;
+  font-size: 0.85rem;
+  opacity: 0.65;
+}
+
+.headphones svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+
+.controls {
+  font-family: system-ui, sans-serif;
+  font-size: 0.72rem;
+  opacity: 0.35;
+}
+
+.keys-only {
+  display: none;
+}
+
+@media (pointer: fine) {
+  .keys-only { display: block; }
+  .touch-only { display: none; }
+}
+
+.btn {
+  width: 250px;
+  max-width: 100%;
+  padding: 13px 28px;
+  font: inherit;
+  font-size: 0.95rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--bright);
+  background: transparent;
+  border: 1px solid rgba(206, 108, 56, 0.45);
+  border-radius: 4px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.btn.primary {
+  color: #1a0d06;
+  border-color: var(--terra);
+  background: var(--terra);
+}
+
+.btn.primary:active {
+  background: var(--terra-light);
+}
+
+.btn:active {
+  background: rgba(206, 108, 56, 0.16);
+}
+
+.overlay h2 {
+  font-size: 2.2rem;
+  font-weight: normal;
+  font-style: italic;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.2rem;
+  color: var(--terra-light);
+}
+
+#pause {
+  background: rgba(0, 0, 0, 0.88);
+}
+
+/* Μαίανδρος (ελληνικό κλειδί) — ίδιο μοτίβο με το Pottery.meander του canvas. */
+.meander {
+  flex: none;
+  width: min(300px, 86vw);
+  height: 14px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M0 14.7H16M0 1.3H16M13 14.7V3H4V11H9V7' fill='none' stroke='%23ce6c38' stroke-width='1.6'/%3E%3C/svg%3E") repeat-x center / 14px 14px;
+  opacity: 0.9;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ---- HUD ---- */
+#hud {
+  position: fixed;
+  top: calc(var(--safe-top) + 12px);
+  left: calc(var(--safe-left) + 12px);
+  right: calc(var(--safe-right) + 12px);
+  z-index: 3;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;   /* το κέντρο μένει στη μέση, όσα κουμπιά κι αν υπάρχουν */
+  align-items: center;
+  pointer-events: none;
+}
+
+.hud-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-family: system-ui, sans-serif;
+  text-transform: uppercase;
+}
+
+.hud-right {
+  display: flex;
+  gap: 10px;
+  justify-self: end;
+}
+
+.hud-left {
+  display: flex;
+  gap: 10px;
+  justify-self: start;
+}
+
+.hud-btn {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  background: rgba(206, 108, 56, 0.06);
+  border: 1px solid rgba(206, 108, 56, 0.14);
+  border-radius: 50%;
+  opacity: 0.6;
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.hud-btn:active {
+  background: rgba(206, 108, 56, 0.15);
+}
+
+.hud-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+.hud-btn svg .line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hud-btn .count {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  font-family: system-ui, sans-serif;
+  font-size: 0.72rem;
+  line-height: 20px;
+  color: #000;
+  background: var(--text);
+  border-radius: 10px;
+}
+
+.hud-btn.empty {
+  opacity: 0.2;
+}
+
+.hud-btn.empty .count {
+  background: rgba(206, 108, 56, 0.4);
+}
+
+#level-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  opacity: 0.3;
+}
+
+#strings-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  opacity: 0.45;
+}
+
+/* Άμεσα μηνύματα (αντικείμενα, Χάροντας): κάτω από τον παίκτη. */
+#notice {
+  position: fixed;
+  top: 60%;
+  left: calc(var(--safe-left) + 16px);
+  right: calc(var(--safe-right) + 16px);
+  z-index: 3;
+  margin: 0 auto;
+  max-width: 380px;
+  font-style: italic;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: center;
+  color: #f3dcc0;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 1);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+#notice.visible {
+  opacity: 0.9;
+}
+
+/* ---- Οδηγίες & τίτλος επιπέδου ---- */
+#hint {
+  position: fixed;
+  top: calc(var(--safe-top) + 78px);
+  left: calc(var(--safe-left) + 16px);
+  right: calc(var(--safe-right) + 16px);
+  z-index: 3;
+  margin: 0 auto;
+  max-width: 420px;
+  font-family: system-ui, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--bright);
+  text-shadow: 0 0 10px rgba(0, 0, 0, 1);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+#hint.visible {
+  opacity: 0.8;
+}
+
+#level-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 24vh;   /* πάνω από τον παίκτη, που είναι στο κέντρο */
+  gap: 0.4rem;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+}
+
+#level-intro.show {
+  animation: intro 5s ease forwards;
+}
+
+#intro-number {
+  font-family: system-ui, sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+#intro-name {
+  font-size: 1.8rem;
+  font-style: italic;
+  color: var(--bright);
+  text-shadow: 0 0 16px rgba(206, 108, 56, 0.45);
+}
+
+#intro-line {
+  max-width: 320px;
+  margin-top: 0.6rem;
+  padding: 0 16px;
+  font-style: italic;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+@keyframes intro {
+  0% { opacity: 0; }
+  14% { opacity: 1; }
+  78% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ---- Cutscenes ---- */
+.cutscene {
+  z-index: 6;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.cutscene.good {
+  background: radial-gradient(circle at 50% 30%, #2a1d0e 0%, #000 65%);
+}
+
+.cutscene.bad {
+  background: radial-gradient(circle at 50% 50%, #0b0f18 0%, #000 70%);
+}
+
+#cut-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-width: 340px;
+  font-size: 1.12rem;
+  line-height: 1.55;
+  color: var(--bright);
+}
+
+#cut-lines p {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 1.4s ease, transform 1.4s ease;
+}
+
+#cut-lines p.in {
+  opacity: 0.95;
+  transform: none;
+}
+
+#cut-lines p.in.old {
+  opacity: 0.5;
+}
+
+.cutscene.good #cut-lines {
+  color: #ffe6c2;
+}
+
+#cut-skip {
+  position: absolute;
+  top: calc(var(--safe-top) + 14px);
+  right: calc(var(--safe-right) + 14px);
+  padding: 8px 14px;
+  font-family: system-ui, sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid rgba(206, 108, 56, 0.18);
+  border-radius: 4px;
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+/* Μικρή κουκκίδα που "αναπνέει": πάτα για συνέχεια. */
+.cut-next {
+  position: absolute;
+  bottom: calc(var(--safe-bottom) + 48px);
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  border-radius: 50%;
+  background: var(--text);
+  animation: breathe 2.2s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.6; }
+}
+
+/* Ο ψίθυρος "Orpheus..." στο κεφάλαιο V. */
+#notice.whisper {
+  font-size: 1.25rem;
+  letter-spacing: 0.3em;
+  color: #f2dab8;
+  opacity: 0.7;
+}
+
+/* Μακρύ κείμενο κουμπιού (π.χ. "Try again from the last checkpoint"). */
+.btn {
+  line-height: 1.5;
+}
+
+#end-bad .btn.primary {
+  letter-spacing: 0.12em;
+}
+
+/* Η μικρή ζωγραφιά αγγείου πάνω από τις γραμμές της cutscene. */
+#cut-art {
+  width: min(300px, 86vw);
+  aspect-ratio: 300 / 118;
+  height: auto;
+  margin-bottom: 1.4rem;
+}
+
+/* Το μενού αφήνει να φαίνεται το animated φόντο του canvas. */
+#menu {
+  background: transparent;
+}
+
+/* Υπότιτλοι ανά χαρακτήρα. */
+#notice.charon {
+  font-style: normal;
+  letter-spacing: 0.04em;
+  color: #d9c7a8;
+}
+
+#notice.shade {
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  color: #e0503c;
+  text-shadow: 0 0 10px rgba(150, 20, 10, 0.9);
+}
+
+/* Pixel art: οι μικροί καμβάδες μεγαλώνουν με καθαρά τετράγωνα pixels. */
+#cut-art {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Κουμπιά σε ύφος 8-bit: τετράγωνες γωνίες, χοντρό περίγραμμα, "σκιά" χωρίς θάμπωμα. */
+.btn {
+  border-radius: 0;
+  border-width: 2px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.9), 4px 4px 0 1px rgba(206, 108, 56, 0.35);
+}
+
+.btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.9);
+}
+
+.hud-btn {
+  border-radius: 0;
+  border-width: 2px;
+}
+
+.hud-btn .count {
+  border-radius: 0;
+}
+
+#level-buttons button,
+#cut-skip {
+  border-radius: 0;
+}
+
+/* ---- Οριζόντια οθόνη (landscape) ---- */
+/* Οι οθόνες κυλάνε αν δεν χωράνε, και κεντράρονται μόνο όταν χωράνε. */
+.overlay {
+  overflow-y: auto;
+  justify-content: safe center;
+}
+
+@media (orientation: landscape) and (max-height: 540px) {
+  .overlay {
+    gap: 0.55rem;
+    padding: calc(var(--safe-top) + 12px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 12px) calc(var(--safe-left) + 16px);
+  }
+
+  .overlay h2 {
+    font-size: 1.6rem;
+    margin-bottom: 0;
+  }
+
+  .btn {
+    padding: 8px 24px;
+    font-size: 0.85rem;
+  }
+
+  .objective {
+    margin-bottom: 0.2rem;
+  }
+
+  /* Μενού: το έμβλημα (canvas) αριστερά, τα κουμπιά δεξιά. */
+  #menu {
+    padding-left: 44vw;
+  }
+
+  #menu h1 {
+    font-size: 2.1rem;
+  }
+
+  .headphones {
+    margin-top: 0.4rem;
+  }
+
+  /* Cutscenes: η ζωγραφιά αριστερά, οι γραμμές δεξιά. */
+  .cutscene {
+    flex-direction: row;
+    gap: 2rem;
+  }
+
+  #cut-art {
+    width: min(300px, 34vw);
+    margin: 0;
+  }
+
+  #cut-lines {
+    max-width: 52vw;
+    font-size: 0.95rem;
+    gap: 0.45rem;
+  }
+
+  #hint {
+    top: calc(var(--safe-top) + 66px);
+  }
+
+  #notice {
+    top: 68%;
+  }
+
+  #level-intro {
+    padding-top: 16vh;
+  }
+}
+
+/* ---- Χάρτης ---- */
+/* Ο χάρτης ζωγραφίζεται στο canvas· η οθόνη έχει μόνο τον τίτλο (πάνω) και το Back (κάτω). */
+#map-screen {
+  background: transparent;
+  justify-content: space-between;
+  padding-top: calc(var(--safe-top) + 18px);
+  padding-bottom: calc(var(--safe-bottom) + 22px);
+  animation: none;
+}
+
+#map-chapter {
+  opacity: 0.85;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.75);
+}
+
+/* Όσο είναι ανοιχτός ο χάρτης, τα μηνύματα του παιχνιδιού κρύβονται. */
+body.map-open #hint,
+body.map-open #notice,
+body.map-open #level-intro {
+  visibility: hidden;
+}
+
+/* ---- Μενού: ο χώρος της σκηνής σε pixel art (τη ζωγραφίζει το canvas, Fx.drawMenu) ---- */
+#menu-art {
+  flex: none;
+  width: min(340px, 92vw);
+  height: min(21vh, 170px);
+}
+
+@media (orientation: landscape) and (max-height: 540px) {
+  #menu-art {
+    display: none;
+  }
+}
+
+/* ---- Μέσα σε iframe (site του game jam) ----
+   Πάνω δεξιά (~60×60 px) έχει κουμπί το ίδιο το site: τα κουμπιά μας (λύρα, αγγείο,
+   Skip) φεύγουν από εκεί — η λύρα και το αγγείο πιο κάτω, το Skip αριστερά. */
+body.embedded .hud-right {
+  position: absolute;
+  top: 64px;
+  right: 0;
+}
+
+body.embedded #hint {
+  top: calc(var(--safe-top) + 132px);
+}
+
+body.embedded #cut-skip {
+  right: auto;
+  left: calc(var(--safe-left) + 14px);
+}
+
+/* Οριζόντια το μήνυμα χωράει ανάμεσα στα κουμπιά — μένει ψηλά. */
+body.embedded.landscape #hint {
+  top: calc(var(--safe-top) + 66px);
+}
