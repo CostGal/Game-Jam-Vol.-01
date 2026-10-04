@@ -58,43 +58,145 @@
   }
   const topOf=(obj,min)=>{ const w=winnerOf(obj); return w&&w.count>=(min||1)? w : null; };
   const names=(arr)=>arr.length<=3? arr.join(" & ") : arr.slice(0,2).join(", ")+" & "+(arr.length-2)+" ακόμα";
-  function awCard(title,dsc,win,meta){
-    const c=el("div","glass aw"); c.append(el("b",null,title), el("p","by",dsc));
-    if(!win) c.append(el("p","empty","Δεν βγήκε νικητής."));
-    else { c.append(el("div","awn",win)); if(meta) c.append(el("p","by",meta)); }
-    return c;
-  }
+  const gnames=ls=>ls.map(l=>GJ.gname(l)).join(" & ");
 
-  function specialAwards(d,sc){
+  /* Every award as data: shown as cards on the page and as slides in the ceremony.
+     {em, t, dsc, games:[winning letters], nom:true if all games are nominees, win, meta, rows:[{win,meta,l}], wide, lvl:applause 1-3} */
+  function voted(d){
+    return [["visual","🎨","Καλύτερο οπτικό","Το παιχνίδι που δείχνει καλύτερα"],["bug","🪲","Χρυσό bug","Το πιο αστείο glitch"]].map(([k,em,t,dsc])=>{
+      const w=winnerOf(d.awards&&d.awards[k]);
+      return {key:k,em,t,dsc,nom:true,lvl:2,games:w?w.tied:[],win:w&&gnames(w.tied),meta:w&&(w.count+(w.count===1?" ψήφος":" ψήφοι")+(w.tied.length>1?" · ισοπαλία":"")),empty:"Καμία ψήφος ακόμα."};
+    });
+  }
+  function special(d,sc,basis){
     const X=EXTRA||{}, out=[];
-    // 💘 biggest fan
-    const f=fanPick(sc);
-    if(f){ const fn=X.fans&&X.fans[BASIS]&&X.fans[BASIS][f.l]; const who=fn&&fn.score===f.score&&Array.isArray(fn.names)&&fn.names.length? fn.names : null;
-      const win=who? names(who) : (f.count===1? "Ένας μυστικός fan" : f.count+" fans");
-      const fc=awCard("💘 Μεγαλύτερος fan","Η πιο ψηλή ατομική βαθμολογία", win, (who||f.count===1? "έδωσε ":"έδωσαν ")+f.score+"/10 στο "+GJ.gname(f.l)); fc.classList.add("wide"); out.push(fc); }
-    // 😤 / 🥰 judges
-    const rp=raterPicks(X.fans&&X.fans.raters&&X.fans.raters[BASIS]);
-    if(rp){ const meta=r=>"Ø "+r.avg.toFixed(2)+(r.n? " σε "+r.n+" παιχνίδια":"");
-      out.push(awCard("😤 Πιο αυστηρός κριτής","Ο χαμηλότερος μέσος όρος", names(rp.harsh.names), meta(rp.harsh)));
-      out.push(awCard("🥰 Πιο γενναιόδωρος κριτής","Ο ψηλότερος μέσος όρος", names(rp.generous.names), meta(rp.generous))); }
-    // 🎢 most divisive
-    const sp=spreadPick(sc);
-    out.push(awCard("🎢 Πιο διχαστικό","Οι βαθμοί του απείχαν πιο πολύ", sp&&GJ.gname(sp.l), sp&&("απόκλιση ±"+sp.sd.toFixed(1))));
     // 🎮 most played
     if(X.st){ const t={}; L3.forEach(l=>{ if(X.st[l]&&X.st[l].seconds) t[l]=X.st[l].seconds; }); const w=topOf(t,60);
-      out.push(awCard("🎮 Δεν το άφηναν","Οι περισσότερες ώρες παιχνιδιού", w&&w.tied.map(GJ.gname).join(" & "), w&&("⏱ "+GJ.fmtDur(w.count)+" συνολικά"))); }
+      out.push({key:"played",em:"🎮",t:"Δεν το άφηναν",dsc:"Οι περισσότερες ώρες παιχνιδιού",nom:true,lvl:1,games:w?w.tied:[],win:w&&gnames(w.tied),meta:w&&("⏱ "+GJ.fmtDur(w.count)+" συνολικά")}); }
     // 💬 most talked about
-    if(d.comments){ const w=topOf(d.comments); out.push(awCard("💬 Πιο πολυσυζητημένο","Τα περισσότερα σχόλια", w&&w.tied.map(GJ.gname).join(" & "), w&&(w.count+(w.count===1?" σχόλιο":" σχόλια")))); }
+    if(d.comments){ const w=topOf(d.comments); out.push({key:"talk",em:"💬",t:"Πιο πολυσυζητημένο",dsc:"Τα περισσότερα σχόλια",nom:true,lvl:1,games:w?w.tied:[],win:w&&gnames(w.tied),meta:w&&(w.count+(w.count===1?" σχόλιο":" σχόλια"))}); }
     // reactions
-    if(X.rc){ [["music","🎵 Καλύτερος ήχος","Τα περισσότερα 🎵"],["hard","💀 Το πιο δύσκολο","Τα περισσότερα 💀"]].forEach(([k,t,dsc])=>{
+    if(X.rc){ [["music","🎵","Καλύτερος ήχος","Τα περισσότερα 🎵"],["hard","💀","Το πιο δύσκολο","Τα περισσότερα 💀"]].forEach(([k,em,t,dsc])=>{
       const o={}; L3.forEach(l=>{ const n=X.rc[l]&&X.rc[l][k]; if(n) o[l]=n; }); const w=topOf(o);
-      out.push(awCard(t,dsc, w&&w.tied.map(GJ.gname).join(" & "), w&&(w.count+" αντιδράσεις"))); }); }
+      out.push({key:k,em,t,dsc,nom:true,lvl:1,games:w?w.tied:[],win:w&&gnames(w.tied),meta:w&&(w.count+" αντιδράσεις")}); }); }
+    // 🎢 most divisive
+    const sp=spreadPick(sc);
+    out.push({key:"spread",em:"🎢",t:"Πιο διχαστικό",dsc:"Οι βαθμοί του απείχαν πιο πολύ",nom:true,lvl:1,games:sp?[sp.l]:[],win:sp&&GJ.gname(sp.l),meta:sp&&("απόκλιση ±"+sp.sd.toFixed(1))});
     // ⚡ speedrunners: fastest clear of each game
-    if(X.clears){ const rows=L3.map(l=>{ const r=(X.clears[l]||[]).slice().sort((a,b)=>a.seconds-b.seconds)[0]; return r? {l,r} : null; }).filter(Boolean);
-      if(rows.length){ const c=el("div","glass aw"); c.append(el("b",null,"⚡ Speedrunner"), el("p","by","Ο πιο γρήγορος τερματισμός"));
-        rows.forEach(({l,r})=>{ c.append(el("div","awn",r.name), el("p","by","⏱ "+GJ.fmtClock(r.seconds)+" στο "+GJ.gname(l))); }); out.push(c); } }
+    if(X.clears){ const rows=L3.map(l=>{ const r=(X.clears[l]||[]).slice().sort((a,b)=>a.seconds-b.seconds)[0]; return r? {l,win:r.name,meta:"⏱ "+GJ.fmtClock(r.seconds)+" στο "+GJ.gname(l)} : null; }).filter(Boolean);
+      if(rows.length) out.push({key:"speed",em:"⚡",t:"Speedrunner",dsc:"Ο πιο γρήγορος τερματισμός",lvl:2,games:rows.map(r=>r.l),rows}); }
+    // 😤 / 🥰 judges (needs gj_fans.raters)
+    const rp=raterPicks(X.fans&&X.fans.raters&&X.fans.raters[basis]);
+    if(rp){ const meta=r=>"Ø "+r.avg.toFixed(2)+(r.n? " σε "+r.n+" παιχνίδια":"");
+      out.push({key:"harsh",em:"😤",t:"Πιο αυστηρός κριτής",dsc:"Ο χαμηλότερος μέσος όρος",lvl:1,games:[],win:names(rp.harsh.names),meta:meta(rp.harsh)});
+      out.push({key:"generous",em:"🥰",t:"Πιο γενναιόδωρος κριτής",dsc:"Ο ψηλότερος μέσος όρος",lvl:2,games:[],win:names(rp.generous.names),meta:meta(rp.generous)}); }
+    // 💘 biggest fan (name needs gj_fans)
+    const f=fanPick(sc);
+    if(f){ const fn=X.fans&&X.fans[basis]&&X.fans[basis][f.l]; const who=fn&&fn.score===f.score&&Array.isArray(fn.names)&&fn.names.length? fn.names : null;
+      out.push({key:"fan",em:"💘",t:"Μεγαλύτερος fan",dsc:"Η πιο ψηλή ατομική βαθμολογία",lvl:2,wide:true,games:[f.l],
+        win:who? names(who) : (f.count===1? "Ένας μυστικός fan" : f.count+" fans"), meta:(who&&who.length>1||!who&&f.count>1? "έδωσαν ":"έδωσε ")+f.score+"/10 στο "+GJ.gname(f.l)}); }
     return out;
   }
+  function awCard(a){
+    const c=el("div","glass aw"+(a.wide?" wide":"")); c.append(el("b",null,a.em+" "+a.t), el("p","by",a.dsc));
+    if(a.rows) a.rows.forEach(r=>{ c.append(el("div","awn",r.win), el("p","by",r.meta)); });
+    else if(!a.win) c.append(el("p","empty",a.empty||"Δεν βγήκε νικητής."));
+    else { c.append(el("div","awn",a.win)); if(a.meta) c.append(el("p","by",a.meta)); }
+    return c;
+  }
+  // shrink a line until its longest word fits (Bungee is wide: "UNREMEMBERED" must not break mid-word)
+  function fit(root){ (root||document).querySelectorAll(".awn,.cname,.cer-win,.cer-t").forEach(e=>{ e.style.fontSize=""; let s=parseFloat(getComputedStyle(e).fontSize), n=0; while(e.scrollWidth>e.clientWidth+1 && s>11 && n++<40){ s-=1; e.style.fontSize=s+"px"; } }); }
+  try{ document.fonts&&document.fonts.ready.then(()=>fit()); }catch(e){}
+  let rsz; addEventListener("resize",()=>{ clearTimeout(rsz); rsz=setTimeout(()=>fit(),150); });
+
+  /* ---------- sounds: soft drumroll + applause variations, synthesised (no files), quiet ---------- */
+  const SFX=(()=>{
+    let ac=null, out=null, buf=null, live=[];
+    let muted=(()=>{ try{ return localStorage.getItem("gj_cer_mute")==="1"; }catch(e){ return false; } })();
+    function init(){ if(ac){ if(ac.state==="suspended") ac.resume(); return; } try{ const C=window.AudioContext||window.webkitAudioContext; if(!C) return; ac=new C();
+      out=ac.createGain(); out.gain.value=0.2; out.connect(ac.destination);
+      buf=ac.createBuffer(1,ac.sampleRate*0.4|0,ac.sampleRate); const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; }catch(e){ ac=null; } }
+    function hit(t,gain,freq,type,decay,pan){ const s=ac.createBufferSource(); s.buffer=buf; const f=ac.createBiquadFilter(); f.type=type; f.frequency.value=freq; f.Q.value=type==="bandpass"?1.1:0.7;
+      const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(gain,t+0.003); g.gain.exponentialRampToValueAtTime(0.0001,t+decay);
+      s.connect(f); f.connect(g); let n=g; if(ac.createStereoPanner){ const p=ac.createStereoPanner(); p.pan.value=pan||0; g.connect(p); n=p; } n.connect(out);
+      s.start(t,Math.random()*0.3,decay+0.02); live.push(s); }
+    function stop(){ live.forEach(s=>{ try{ s.stop(); }catch(e){} }); live=[]; }
+    // level 1 = a few people, 2 = a room, 3 = the whole hall (longer, denser, with a swell)
+    function applause(level){ if(!ac||muted) return; live=live.slice(-50);
+      const P=[null,{dur:1.8,ppl:6,rate:3.4},{dur:2.8,ppl:11,rate:3.8},{dur:4.6,ppl:20,rate:4.3}][level||1], t0=ac.currentTime+0.03;
+      for(let i=0;i<P.ppl;i++){ const fq=850+Math.random()*1700, pan=Math.random()*1.6-0.8, rate=P.rate*(0.75+Math.random()*0.5); let t=t0+Math.random()*0.4;
+        while(t<t0+P.dur){ const x=(t-t0)/P.dur, env=Math.min(1,x*6)*(x<0.55?1:1-(x-0.55)/0.45); hit(t,(0.18+Math.random()*0.22)*env+0.001,fq*(0.92+Math.random()*0.16),"bandpass",0.07+Math.random()*0.05,pan); t+=(1/rate)*(0.8+Math.random()*0.4); } } }
+    function drumroll(sec){ if(!ac||muted) return; const t0=ac.currentTime+0.02;
+      for(let t=0;t<sec;t+=0.045+Math.random()*0.01){ const x=t/sec; hit(t0+t,0.08+0.32*x*x,520+Math.random()*120,"lowpass",0.06,(Math.random()-.5)*0.3); } }
+    return { init, applause, drumroll, stop, get muted(){ return muted; }, toggle(){ muted=!muted; try{ localStorage.setItem("gj_cer_mute",muted?"1":"0"); }catch(e){} if(muted) stop(); return muted; } };
+  })();
+
+  /* ---------- the ceremony: one award per slide, the champion last ---------- */
+  const SEEN="gj_cer_seen";
+  const seen=()=>{ try{ return localStorage.getItem(SEEN)==="1"; }catch(e){ return false; } };
+  function buildShow(){
+    const d=DATA, sc=(d.scores&&d.scores.valid)||{}, R=rank(sc), S=[];
+    const tot=d.comments? Object.values(d.comments).reduce((a,b)=>a+b,0) : 0;
+    S.push({intro:true});
+    const list=special(d,sc,"valid").concat(voted(d)).filter(a=>a.win||a.rows);
+    list.forEach((a,i)=>S.push(Object.assign({kick:"ΒΡΑΒΕΙΟ "+(i+1)+" / "+list.length},a)));
+    if(R.length){ const c=R[0], dv=GJ.devOf(c.l), tie=R[1]&&R[1].avg===c.avg&&R[1].n8===c.n8;
+      S.push({champ:true,kick:"ΤΟ ΜΕΓΑΛΟ ΒΡΑΒΕΙΟ",em:"👑",t:"Game Jam Champion",dsc:"Ο υψηλότερος μέσος όρος βαθμολογίας",nom:true,lvl:3,games:[c.l],win:GJ.gname(c.l),
+        meta:(dv?"από "+dv.name+" · ":"")+"Ø "+c.avg.toFixed(2)+" · "+c.n+" ψήφοι"+(tie?" · κέρδισε στις 8+":"")}); }
+    S.push({outro:true,R,voters:d.voters,tot});
+    return S;
+  }
+  function ceremony(){
+    if(document.querySelector(".cer")) return;
+    SFX.init(); try{ parent.GJ_RADIO&&parent.GJ_RADIO.hold(true); }catch(e){}
+    const S=buildShow(); let i=0, revealed=false, busy=false, tm=null;
+    const ov=el("div","cer"); ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true"); ov.setAttribute("aria-label","Τελετή απονομής");
+    const top=el("div","cer-top"), prog=el("span","cer-prog"), mute=el("button","cer-btn"), x=el("button","cer-btn","✕");
+    mute.type=x.type="button"; x.setAttribute("aria-label","Κλείσιμο"); const mlab=()=>{ mute.textContent=SFX.muted?"🔇":"🔊"; mute.setAttribute("aria-label",SFX.muted?"Ήχος ανοιχτός":"Σίγαση"); }; mlab();
+    top.append(prog,mute,x); const stage=el("div","cer-stage"); stage.setAttribute("aria-live","polite"); const hint=el("p","cer-hint");
+    ov.append(top,stage,hint); document.body.append(ov); document.documentElement.classList.add("cer-on");
+    const thumb=(l,cls)=>{ const f=el("figure","cer-nom"+(cls?" "+cls:"")); const im=el("img"); im.src=THUMB[l]; im.alt=""; f.append(im, el("figcaption",null,GJ.gname(l))); return f; };
+    function draw(){
+      const s=S[i]; stage.textContent=""; stage.className="cer-stage"+(s.champ?" champ":""); void stage.offsetWidth; stage.classList.add("in");
+      prog.textContent=(i+1)+" / "+S.length;
+      if(s.intro){ stage.append(el("div","cer-em","🏆"), el("p","cer-kick","GAME JAM VOL. 01"), el("h2","cer-t","Τελετή απονομής"), el("p","cer-dsc","Τα βραβεία ένα-ένα. Το μεγάλο βραβείο στο τέλος."));
+        hint.textContent="Πάτα για να ξεκινήσουμε ›"; revealed=true; return; }
+      if(s.outro){ stage.append(el("div","cer-em","🎮"), el("h2","cer-t","GG σε όλους!"), el("p","cer-dsc","Ψήφισαν "+s.voters+" άτομα"+(s.tot?" · "+s.tot+" σχόλια":"")+"."));
+        const ol=el("ol","cer-rank"); s.R.forEach((r,k)=>{ const li=el("li"); li.append(el("span",null,MEDAL[k]||String(k+1)), el("b",null,GJ.gname(r.l)), el("span",null,r.avg.toFixed(2))); ol.append(li); }); stage.append(ol);
+        const b=el("button","btn red","Δες όλα τα αποτελέσματα"); b.type="button"; b.onclick=e=>{ e.stopPropagation(); close(); }; stage.append(b);
+        hint.textContent=""; revealed=true; return; }
+      stage.append(el("p","cer-kick",s.kick), el("div","cer-em",s.em), el("h2","cer-t",s.t), el("p","cer-dsc",s.dsc));
+      if(s.nom){ const row=el("div","cer-noms"); L3.filter(l=>sc0[l]).forEach(l=>row.append(thumb(l))); stage.append(row); }
+      const res=el("div","cer-res"); res.append(el("p","cer-goes","Και το βραβείο πηγαίνει σε…")); stage.append(res);
+      hint.textContent="Πάτα για το νικητή ›";
+      if(revealed) show(false); fit(stage);
+    }
+    const sc0=(DATA.scores&&DATA.scores.valid)||{};
+    function show(sound){
+      const s=S[i], res=stage.querySelector(".cer-res"); if(!res) return; res.textContent=""; res.classList.add("on");
+      stage.querySelectorAll(".cer-noms .cer-nom").forEach((f,k)=>{ const l=L3.filter(q=>sc0[q])[k]; f.classList.add(s.games.includes(l)?"win":"lose"); });
+      if(s.rows) s.rows.forEach(r=>{ res.append(el("div","cer-win",r.win), el("p","cer-meta",r.meta)); });
+      else { if(!s.nom && s.games.length) { const row=el("div","cer-noms solo"); s.games.forEach(l=>row.append(thumb(l,"win"))); res.append(row); }
+        res.append(el("div","cer-win",s.win)); if(s.meta) res.append(el("p","cer-meta",s.meta)); }
+      fit(stage); revealed=true; hint.textContent=i===S.length-2? "Πάτα για το τέλος ›" : "Πάτα για το επόμενο ›";
+      if(sound){ SFX.applause(s.lvl||1); if(s.champ) confetti(); }
+    }
+    function next(){
+      if(busy) return; const s=S[i];
+      if(!revealed){ busy=true; SFX.drumroll(s.champ?2.2:1.1); const r=stage.querySelector(".cer-goes"); if(r) r.classList.add("pulse"); hint.textContent="";
+        tm=setTimeout(()=>{ busy=false; show(true); }, s.champ?2300:1150); return; }
+      if(i<S.length-1){ i++; revealed=false; draw(); }
+    }
+    function prev(){ if(busy||i===0) return; SFX.stop(); i--; revealed=true; draw(); }
+    function key(e){ if(e.key==="Escape") close(); else if(e.key==="ArrowRight"||e.key===" "||e.key==="Enter"){ e.preventDefault(); next(); } else if(e.key==="ArrowLeft") prev(); }
+    function close(){ clearTimeout(tm); SFX.stop(); removeEventListener("keydown",key); ov.remove(); document.documentElement.classList.remove("cer-on");
+      try{ parent.GJ_RADIO&&parent.GJ_RADIO.hold(false); }catch(e){} try{ localStorage.setItem(SEEN,"1"); }catch(e){} SHOWN=true; render(); }
+    ov.addEventListener("click",e=>{ if(e.target.closest(".cer-btn,.btn")) return; next(); });
+    x.onclick=e=>{ e.stopPropagation(); close(); }; mute.onclick=e=>{ e.stopPropagation(); SFX.toggle(); mlab(); };
+    addEventListener("keydown",key); draw(); ov.focus&&ov.setAttribute("tabindex","-1"); ov.focus();
+  }
+  let SHOWN=false, EXTRA_P=null;
+  async function startCeremony(btn){ if(btn){ btn.disabled=true; btn.textContent="Ετοιμάζω τη σκηνή…"; } SFX.init(); if(!EXTRA) await (EXTRA_P||loadExtra()); ceremony(); }
 
   function bars(dist){
     const mx=Math.max(1,...dist); const w=el("div","bars");
@@ -113,12 +215,21 @@
       app.append(el("p","empty","Μέχρι τότε: παίξε, βαθμολόγησε και σχολίασε. Η ψηφοφορία κλείνει στις 21:00."));
       return;
     }
+    // released: first visit opens with the ceremony instead of spoiling the winner
+    if(!d.preview && !SHOWN && !seen()){
+      sub.textContent="Τα αποτελέσματα βγήκαν!";
+      const c=el("div","glass big cer-start"); c.append(el("div","cer-em","🏆"), el("h2","cer-t","Τελετή απονομής"), el("p","cer-dsc","Τα βραβεία ένα-ένα, με το μεγάλο βραβείο στο τέλος. Άνοιξε τον ήχο 🔊"));
+      const go=el("button","btn red","▶ Ξεκίνα την τελετή"); go.type="button"; go.onclick=()=>startCeremony(go); c.append(go); app.append(c);
+      const sk=el("button","gj-link cer-skip","Δείξε μου κατευθείαν τα αποτελέσματα"); sk.type="button"; sk.onclick=()=>{ SHOWN=true; render(); }; app.append(sk);
+      return;
+    }
     if(d.preview){ const b=el("div","glass pv-banner"); b.append(el("b",null,"🔍 ΠΡΟΕΠΙΣΚΟΠΗΣΗ"), document.createTextNode(" Το βλέπεις μόνο εσύ (κλειδί διοργανωτή). Οι υπόλοιποι θα δουν αυτή τη σελίδα την Κυριακή στις 21:30. Οι ψήφοι ακόμα μετράνε.")); app.append(b); }
     const sc=(d.scores&&d.scores[BASIS])||{};
     const R=rank(sc);
     sub.textContent = d.preview? "Προσωρινά αποτελέσματα (μέχρι στιγμής)" : "Το Game Jam Vol. 01 τελείωσε. GG σε όλους!";
     if(!R.length){ app.append(el("p","empty","Δεν υπάρχουν ψήφοι ακόμα.")); return; }
 
+    const rw=el("button","btn alt cer-again","🎬 "+(d.preview?"Δοκιμή τελετής":"Δες ξανά την τελετή")); rw.type="button"; rw.onclick=()=>startCeremony(rw); app.append(rw);
     // basis toggle
     const tg=el("div","chips"); [["valid","Όλες οι έγκυρες ψήφοι"],["judges","Μόνο κριτές"]].forEach(([k,lab])=>{ const b=el("button","chip all",lab); b.type="button"; b.setAttribute("aria-pressed",BASIS===k); b.onclick=()=>{ BASIS=k; render(); }; tg.append(b); });
     app.append(tg); app.append(el("p","note2", BASIS==="valid"? "Δεν μετράνε οι ψήφοι των δημιουργών στο δικό τους παιχνίδι. Μία ψήφος ανά όνομα, μετράει η τελευταία." : "Χωρίς τις ψήφους των τριών δημιουργών, μόνο όσοι δεν έφτιαξαν παιχνίδι."));
@@ -142,15 +253,10 @@
 
     // awards
     app.append(el("h2",null,"Βραβεία κοινού"));
-    const aw=el("div","awards2");
-    [["bug","🪲 Χρυσό bug","Το πιο αστείο glitch"],["visual","🎨 Καλύτερο οπτικό","Το παιχνίδι που δείχνει καλύτερα"]].forEach(([k,t,dsc])=>{
-      const w=winnerOf(d.awards&&d.awards[k]); const c=el("div","glass aw"); c.append(el("b",null,t), el("p","by",dsc));
-      if(!w) c.append(el("p","empty","Καμία ψήφος ακόμα."));
-      else { const names=w.tied.map(l=>GJ.gname(l)).join(" & "); c.append(el("div","awn",names), el("p","by",w.count+(w.count===1?" ψήφος":" ψήφοι")+(w.tied.length>1?" · ισοπαλία":""))); }
-      aw.append(c); });
-    app.append(aw);
+    const aw=el("div","awards2"); voted(d).forEach(a=>aw.append(awCard(a))); app.append(aw);
     app.append(el("h2",null,"Ειδικά βραβεία"));
-    const sp=el("div","awards2"); specialAwards(d,sc).forEach(c=>sp.append(c)); app.append(sp);
+    const spx=el("div","awards2"); const sl=special(d,sc,BASIS); const fi=sl.findIndex(a=>a.key==="fan"); if(fi>0) sl.unshift(sl.splice(fi,1)[0]);
+    sl.forEach(a=>spx.append(awCard(a))); app.append(spx);
     if(!EXTRA) app.append(el("p","note2","Φορτώνω τα υπόλοιπα βραβεία…"));
     app.append(el("p","note2","Ψήφισαν "+d.voters+" άτομα"+(d.comments? " · "+Object.values(d.comments).reduce((a,b)=>a+b,0)+" σχόλια":"")+"."));
 
@@ -159,12 +265,13 @@
     sh.onclick=async()=>{ const txt=`🏆 GAME JAM Vol. 01\n${R.map((r,i)=>(MEDAL[i]||"")+" "+GJ.gname(r.l)+" ("+(GJ.devOf(r.l)||{}).name+"): "+r.avg.toFixed(2)).join("\n")}\nhttps://gamejam-patra.netlify.app/`;
       try{ if(navigator.share){ await navigator.share({text:txt}); } else { await navigator.clipboard.writeText(txt); sh.textContent="✓ Αντιγράφηκε"; } }catch(e){} };
     const ar=el("a","btn alt","🕹️ Arcade"); ar.href="arcade/"; ac.append(sh,ar); app.append(ac);
-    if(!d.preview && !confettiOn){ confettiOn=true; confetti(); }
+    if(!d.preview && !confettiOn && !SHOWN){ confettiOn=true; confetti(); }
+    requestAnimationFrame(()=>fit(app));
   }
 
   function confetti(){
     if(!matchMedia("(prefers-reduced-motion: no-preference)").matches) return;
-    const cv=document.createElement("canvas"); cv.style.cssText="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:3"; document.body.append(cv);
+    const cv=document.createElement("canvas"); cv.style.cssText="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:70"; document.body.append(cv);
     const x=cv.getContext("2d"); const W=cv.width=innerWidth, H=cv.height=innerHeight; const cols=["#EE4266","#FFD23F","#1FA88A","#3D3A8C","#FFFFFF"];
     const ps=Array.from({length:90},()=>({x:Math.random()*W,y:-20-Math.random()*H*.6,s:5+Math.random()*7,v:2+Math.random()*3.5,h:(Math.random()-.5)*2,c:cols[Math.random()*cols.length|0]}));
     let t0=performance.now();
@@ -173,7 +280,7 @@
   }
 
   let extraT=0;
-  async function loadExtra(){ if(Date.now()-extraT<25000) return; extraT=Date.now(); const x=await fetchExtra(); EXTRA=x; render(); }
+  async function loadExtra(){ if(Date.now()-extraT<25000) return EXTRA_P; extraT=Date.now(); EXTRA_P=fetchExtra(); const x=await EXTRA_P; EXTRA=x; if(!document.querySelector(".cer")) render(); }
   async function boot(){ DATA=await fetchData(); render(); if(DATA&&(DATA.released!==false||DATA.preview)) loadExtra(); if(DATA&&DATA.released===false&&DATA.preview){ clearInterval(timer); timer=setInterval(async()=>{ const d=await fetchData(); if(d){ DATA=d; render(); loadExtra(); } },30000); } }
   boot();
 })();
