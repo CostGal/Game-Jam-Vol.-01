@@ -22,7 +22,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Game Jam">
-<link rel="stylesheet" href="gj.css?v28">
+<link rel="stylesheet" href="gj.css?v29">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Commissioner:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -125,6 +125,27 @@ h2{font-weight:900;font-size:1.4rem;margin:36px 0 12px;line-height:1.2}
 .inapp button{margin-top:8px;font:inherit;font-weight:900;background:#fff;color:#22223B;border:2px solid #22223B;border-radius:6px;padding:6px 12px;cursor:pointer}
 .ibtn{display:block;width:100%;font:inherit;font-weight:900;font-size:1.1rem;padding:14px;border:3px solid var(--ink);border-radius:6px;background:var(--teal);color:#fff;box-shadow:5px 5px 0 var(--ink);cursor:pointer}
 .awards{display:grid;gap:10px}
+.aw-w{font-family:var(--display);font-size:1.15rem;color:var(--ink)!important;line-height:1.1;margin-top:6px!important}
+.award.main .aw-w{color:var(--bg)!important;font-size:1.5rem}
+.aw-again{justify-self:start;margin-top:4px}
+.cban{margin:22px 0 4px;padding:14px 14px 16px;background:var(--ink);color:var(--bg);border:3px solid var(--ink);border-radius:6px;box-shadow:5px 5px 0 var(--red);text-align:center}
+.cb-k{margin:0 0 10px;font-weight:900;font-size:.8rem;letter-spacing:.14em;color:var(--red)}
+.cb-th{display:block}.cb-th img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border:3px solid var(--bg);border-radius:6px;background:#000}
+.cb-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px;text-align:left}
+.cb-pt{width:64px;height:64px;border:3px solid var(--bg);border-radius:6px;image-rendering:pixelated;background:#000;flex:none}
+.cb-g{margin:0;font-family:var(--display);font-size:clamp(1.4rem,7vw,2rem);line-height:1;color:var(--bg)}
+.cb-by{margin:4px 0 0;font-weight:800;font-size:.9rem;opacity:.9}.cb-by a{color:inherit}
+.cb-ac{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.cban .play{background:var(--red);color:#fff;border:2px solid var(--red)}
+.cban .play.alt,.aw-again{background:transparent;color:inherit;border:2px solid currentColor}
+.cup{display:inline-block;font-family:var(--body);font-weight:900;font-size:.72rem;letter-spacing:.04em;background:var(--red);color:#fff;border-radius:999px;padding:3px 9px;margin:0 6px 4px 0;vertical-align:middle}
+.pname .cup{margin:0 0 0 6px;font-size:.9rem;padding:1px 7px}
+.gcard.won,.player.won{box-shadow:5px 5px 0 var(--red)}
+.gtitle .cup{display:table;margin-bottom:4px}
+.timeline li.tbd::before{background:repeating-linear-gradient(45deg,var(--ink) 0 3px,var(--bg) 3px 6px)}
+.tbdchip{display:inline-block;margin-left:6px;font-size:.75rem;font-weight:900;padding:2px 8px;border-radius:999px;border:2px dashed var(--ink);vertical-align:middle;animation:tbd 2.4s ease-in-out infinite}
+@keyframes tbd{50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.tbdchip{animation:none}}
 .award{background:color-mix(in srgb,var(--paper) 88%,transparent);border:3px solid var(--ink);border-radius:4px;padding:12px 14px}
 .award b{display:block;font-size:1.05rem}
 .award p{margin:4px 0 0;font-size:.93rem;color:var(--muted)}
@@ -247,6 +268,8 @@ main{position:relative;z-index:1}
     <nav class="topnav" aria-label="Σελίδες"><a class="navb" href="arcade/">🕹️ Arcade<small>η βιβλιοθήκη των παιχνιδιών μας</small></a><a class="navb" href="results.html">🏁 Αποτελέσματα<small id="resSmall">Κυριακή 4/10, 21:30</small></a></nav>
   </header>
 
+  <section class="cban" id="champBan" hidden></section>
+
   <h2>Οι παίκτες</h2>
   <div class="players" id="players"></div>
 
@@ -254,6 +277,7 @@ main{position:relative;z-index:1}
   <p class="intro">Παίξε, βαθμολόγησε και άφησε σχόλιο. Κάθε παιχνίδι έχει το προφίλ του δημιουργού του στο Arcade.</p>
   <div class="games" id="games"></div>
 
+  <div id="howVote">
   <h2>Πώς ψηφίζεις</h2>
   <ol class="steps">
     <li><p>Παίξε και τα 3 παιχνίδια. Ανοίγουν κατευθείαν στο κινητό, χωρίς εγκατάσταση.</p></li>
@@ -262,6 +286,7 @@ main{position:relative;z-index:1}
   </ol>
   <a class="btn vote" id="voteBtn" aria-disabled="true" role="button">🏆 Ψήφισε τα βραβεία</a>
   <p class="note" id="voteNote"></p>
+  </div>
   <a class="btn discord" id="discordBtn" aria-disabled="true">Μπες στο Discord</a>
   <p class="note" id="discordNote"></p>
 
@@ -270,14 +295,14 @@ main{position:relative;z-index:1}
     <div class="install" id="installBox"></div>
   </section>
 
-  <h2>Βραβεία</h2>
-  <div class="awards">
+  <h2 id="awH">Βραβεία</h2>
+  <div class="awards" id="awardsBox">
     <div class="award main"><b>🏆 Game Jam Champion</b><p>Ο υψηλότερος μέσος όρος στο 1 έως 10.</p></div>
     <div class="award"><b>🪲 Χρυσό bug</b><p>Το πιο αστείο glitch της βραδιάς.</p></div>
     <div class="award"><b>🎨 Καλύτερο οπτικό</b><p>Το παιχνίδι που δείχνει καλύτερα.</p></div>
   </div>
 
-  <h2>Τι μένει</h2>
+  <h2 id="nextH">Τι μένει</h2>
   <div class="sched"><ul class="timeline" id="timeline"></ul></div>
 
   <h2>Κανόνες</h2>
@@ -292,10 +317,10 @@ main{position:relative;z-index:1}
     </ul>
   </details>
 
-  <footer>Διοργάνωση: Κώστας. Απορίες στο group. · <button type="button" id="tourBtn" class="linkbtn">ℹ️ Τι νέο</button> · build v28<br><span id="verline" style="opacity:.7"></span></footer>
+  <footer>Διοργάνωση: Κώστας. Απορίες στο group. · <button type="button" id="tourBtn" class="linkbtn">ℹ️ Τι νέο</button> · build v29<br><span id="verline" style="opacity:.7"></span></footer>
 </main>
 
-<script src="gj.js?v28"></script>
+<script src="gj.js?v29"></script>
 <script>
 /* ===== ΡΥΘΜΙΣΕΙΣ ===== */
 const CONFIG = {
@@ -342,7 +367,7 @@ const el = (tag, cls, text) => { const e=document.createElement(tag); if(cls) e.
 function renderPlayers(ph){
   const box=document.getElementById("players"); box.innerHTML="";
   CONFIG.players.forEach(pl=>{
-    const card=el("article","player"); card.dataset.c=pl.color;
+    const card=el("article","player"); card.dataset.c=pl.color; card.dataset.s=pl.slug;
     const head=el("div","phead");
     const im=el("img","portrait"); im.src=pl.img; im.alt="Pixel πορτρέτο: "+pl.name; im.width=88; im.height=88;
     const info=el("div","pinfo");
@@ -380,7 +405,7 @@ var renderGames=function(ph, now){
     const vr=el("div","gvote"); const my=(window.GJ&&GJ.myVotes().scores[g.letter]);
     vr.append(el("span","gmine", my ? "Η ψήφος σου: "+my+"/10" : "Δεν έχεις ψηφίσει ακόμα"));
     if(ph==="vote"||ph==="build"||ph==="lobby"){ const b=el("button","gvbtn", my?"Άλλαξε ψήφο":"★ Βαθμολόγησε"); b.type="button"; b.onclick=()=>GJ.scoreSheet(g.letter); vr.append(b); }
-    card.append(vr);
+    if(ph!=="done") card.append(vr);
     const cm=el("button","gcom","💬 Σχόλια"); cm.type="button"; cm.dataset.l=g.letter; cm.onclick=()=>GJ.commentsSheet(g.letter);
     const gre=el("div","gre"); gre.dataset.l=g.letter; gre.append(el("p","cap","Τι σου άρεσε;")); const row=el("div","row");
     GJ.TAGS.forEach(([k,e,l])=>{ const b=el("button","rx"); b.type="button"; b.dataset.k=k; b.title=l; b.setAttribute("aria-label",l); b.append(el("span","e",e), el("span","n","")); b.onclick=()=>toggleReact(g.letter,k); row.append(b); });
@@ -424,6 +449,13 @@ function renderButtons(ph){
   document.getElementById("discordNote").textContent = "Κάθε παιχνίδι έχει δικό του κανάλι με τα σχόλια του site.";
 }
 function renderTimeline(now){
+  if(phase(now)==="done"){
+    document.getElementById("nextH").textContent="Τι ακολουθεί";
+    const ul=document.getElementById("timeline"); ul.innerHTML="";
+    const a=el("li","now"); a.append(el("b",null,"Τώρα"), document.createTextNode("Το jam τελείωσε! Δες τους νικητές και παίξε ξανά τα παιχνίδια στο Arcade.")); ul.append(a);
+    const b=el("li","tbd"); const t=el("b"); t.append(document.createTextNode("Game Jam Vol. 02 "), el("span","tbdchip","🔒 TBD")); b.append(t, document.createTextNode("Ακόμα το αποφασίζουμε. Μείνετε συντονισμένοι 👀")); ul.append(b);
+    return;
+  }
   const items=[
     [new Date(0), "Τώρα", "Παίζεις, βαθμολογείς και σχολιάζεις"],
     [voteAt, "Κυριακή 4/10, 21:00", "Κλείνει η ψηφοφορία"],
@@ -501,6 +533,47 @@ setTimeout(refreshSocial,300); setInterval(refreshSocial,45000);
 tick(); setInterval(tick,1000);
 try{ parent.postMessage({gj:"nav",path:"home.html",title:document.title},location.origin); }catch(e){}
 const tb=document.getElementById("tourBtn"); if(tb) tb.onclick=()=>{ try{ parent.GJ_TOUR(); }catch(e){} };
+/* ===== after the results: champion banner, every award's winner, cups ===== */
+let CHAMP=null;
+function paintCups(){
+  if(!CHAMP) return; const dv=GJ.devOf(CHAMP.l);
+  document.querySelectorAll(".gcard").forEach(c=>{ const on=c.dataset.l===CHAMP.l; c.classList.toggle("won",on);
+    if(on && !c.querySelector(".cup")){ const t=c.querySelector(".gtitle"); if(t) t.prepend(el("span","cup","🏆 Champion")); } });
+  document.querySelectorAll(".player").forEach(c=>{ const on=!!dv&&c.dataset.s===dv.slug; c.classList.toggle("won",on);
+    if(on && !c.querySelector(".cup")){ const n=c.querySelector(".pname"); if(n) n.append(el("span","cup","🏆")); } });
+}
+function paintWinners(){
+  const how=document.getElementById("howVote"); if(how) how.hidden=phase(new Date())==="done";
+  if(phase(new Date())!=="done" || !GJ.RES) return;
+  GJ.RES.load().then(({d,X})=>{
+    const c=GJ.RES.champion(d); if(!c) return; CHAMP=c; paintCups();
+    const dv=GJ.devOf(c.l), pl=dv&&CONFIG.players.find(p=>p.slug===dv.slug), g=CONFIG.games.find(x=>x.letter===c.l);
+    // banner
+    const bn=document.getElementById("champBan"); bn.textContent=""; bn.hidden=false;
+    bn.append(el("p","cb-k","🏆 GAME JAM VOL. 01 CHAMPION"));
+    if(g&&g.teaser){ const a=el("a","cb-th"); a.href="play.html?g="+c.l; a.target="_top"; const im=el("img"); im.src=g.teaser; im.alt=GJ.gname(c.l); a.append(im); bn.append(a); }
+    const row=el("div","cb-row");
+    if(pl){ const pi=el("img","cb-pt"); pi.src=pl.img; pi.alt=pl.name; row.append(pi); }
+    const tx=el("div","cb-tx"); tx.append(el("h2","cb-g",GJ.gname(c.l)));
+    const by=el("p","cb-by"); if(dv){ by.append(document.createTextNode("από ")); const a=el("a",null,dv.name); a.href="devs/"+dv.slug+"/"; by.append(a, document.createTextNode(" · ")); } by.append(document.createTextNode("Ø "+c.avg.toFixed(2)+" · "+c.n+" ψήφοι")); tx.append(by);
+    row.append(tx); bn.append(row);
+    const ac=el("div","cb-ac"); const pa=el("a","play","▶ Παίξε"); pa.href="play.html?g="+c.l; pa.target="_top"; const ra=el("a","play alt","🏁 Όλα τα αποτελέσματα"); ra.href="results.html"; ac.append(pa,ra); bn.append(ac);
+    // every award's winner
+    document.getElementById("awH").textContent="Οι νικητές";
+    const box=document.getElementById("awardsBox"); box.textContent="";
+    const m=el("div","award main"); m.append(el("b",null,"🏆 Game Jam Champion"), el("p","aw-w",GJ.gname(c.l)), el("p",null,(dv?"από "+dv.name+" · ":"")+"Ø "+c.avg.toFixed(2))); box.append(m);
+    const sc=(d.scores&&d.scores.valid)||{};
+    GJ.RES.voted(d).concat(GJ.RES.special(d,sc,"valid",X)).filter(a=>a.win||a.rows).forEach(a=>{
+      const w=el("div","award"); w.append(el("b",null,a.em+" "+a.t));
+      if(a.rows) a.rows.forEach(r=>w.append(el("p","aw-w",r.win), el("p",null,r.meta)));
+      else { w.append(el("p","aw-w",a.win)); if(a.meta) w.append(el("p",null,a.meta)); }
+      box.append(w); });
+    const again=el("a","play alt aw-again","🎬 Δες ξανά την τελετή"); again.href="results.html"; box.append(again);
+  });
+}
+{ const _rg3=renderGames; renderGames=function(ph,now){ _rg3(ph,now); paintCups(); paintWinners(); }; }
+paintWinners();
+
 /* ===== build fingerprint (verifies what is actually served) ===== */
 (async function(){
   const el=document.getElementById("verline"); if(!el) return;

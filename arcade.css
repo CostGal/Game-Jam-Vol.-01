@@ -164,3 +164,13 @@ footer{margin-top:40px;font-size:.88rem;color:var(--muted)}
 .cer-rest{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px auto 0;width:min(100%,400px)}
 .cer-rest .cer-nom{opacity:.85}
 .cer-sc{display:block;font-family:var(--display);font-weight:400;font-size:1.1rem;margin-top:2px}
+
+/* champion cup */
+.gc.won{box-shadow:5px 5px 0 var(--red)}
+.bdg.cupb{background:var(--red);color:#fff;border-color:var(--red)}
+.pf.won{box-shadow:5px 5px 0 var(--red)}
+.cupban{display:flex;align-items:center;gap:12px;margin:-4px 0 14px;padding:10px 12px;background:var(--ink);color:var(--bg);border-radius:6px}
+.cupban .cupi{font-size:2.4rem;line-height:1;animation:bob 2.2s ease-in-out infinite}
+.cupban b{display:block;font-family:var(--display);font-weight:400;font-size:1rem;line-height:1.1}
+.cupban span{font-weight:800;font-size:.85rem;opacity:.85}
+@media (prefers-reduced-motion:reduce){.cupban .cupi{animation:none}}

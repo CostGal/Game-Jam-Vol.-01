@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Commissioner:wght@600;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="gj.css?v28">
+<link rel="stylesheet" href="gj.css?v29">
 <style>
 :root{--y:#FFD23F;--ink:#22223B;--paper:#FFF6D6;--red:#EE4266;--teal:#1FA88A;--indigo:#3D3A8C;
   --display:"Bungee","Arial Black",Impact,sans-serif;--body:"Commissioner","Segoe UI",Roboto,Helvetica,Arial,sans-serif}
@@ -51,6 +51,7 @@ body{font-family:var(--body);color:var(--ink)}
 #fab.open .fi{display:block}
 .fi[hidden]{display:none!important}
 #fab[hidden]{display:none}
+.cupline{display:inline-block;margin:0 0 8px;font-weight:900;font-size:.85rem;letter-spacing:.04em;background:#EE4266;color:#fff;border-radius:999px;padding:4px 12px}
 </style>
 </head>
 <body>
@@ -72,7 +73,7 @@ body{font-family:var(--body);color:var(--ink)}
   <a class="fi" href="index.html#games">← Πίσω στο Game Jam</a>
 </div>
 
-<script src="gj.js?v28"></script>
+<script src="gj.js?v29"></script>
 <script>
 (function(){
   const q=new URLSearchParams(location.search); let L=(q.get("g")||"A").toUpperCase(); if(!GJ.GAMES.includes(L)) L="A";
@@ -101,6 +102,8 @@ body{font-family:var(--body);color:var(--ink)}
     if(!frame.src) frame.src="games/"+L.toLowerCase()+"/";
     return true;
   }
+  // champion cup on the play screen
+  if(GJ.RES) GJ.RES.load().then(({d})=>{ const c=GJ.RES.champion(d); if(!c||c.l!==L) return; const s=body.querySelector(".sub"); if(s&&!body.querySelector(".cupline")){ const p=document.createElement("p"); p.className="cupline"; p.textContent="🏆 Game Jam Vol. 01 Champion"; s.before(p); } }).catch(()=>{});
   if(!renderGate()){ const t=setInterval(()=>{ const c=document.getElementById("clk"); if(new Date()>=GJ.PLAY_AT){ clearInterval(t); renderGate(); } else if(c) c.textContent=fmt(GJ.PLAY_AT-new Date()); },1000); }
 
 

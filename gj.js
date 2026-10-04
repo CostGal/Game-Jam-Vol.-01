@@ -286,6 +286,94 @@
   addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); GJ.deferredPrompt=e; document.dispatchEvent(new CustomEvent("gj:installable")); });
 })();
 
+
+/* ---------- Results: ranking + every award. Shared by the results page, the home page and the arcade. ---------- */
+(function(){
+  const GJ=window.GJ, L3=["A","B","C"];
+  /* Names set by the organiser (override what the database says). game: A Descent, B Patra's Brawlers, C Unremembered */
+  GJ.MANUAL={ fan:{name:"Vasssar"}, hater:{name:"Ζέρβας",game:"A",score:3} };
+  function rank(sc){
+    const arr=L3.filter(l=>sc[l]&&sc[l].n>0).map(l=>Object.assign({l},sc[l]));
+    arr.sort((a,b)=> b.avg-a.avg || b.n8-a.n8 || b.n-a.n);
+    return arr;
+  }
+  const winnerOf=(obj)=>{ if(!obj) return null; const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]); if(!e.length) return null; const top=e[0][1]; const tied=e.filter(x=>x[1]===top).map(x=>x[0]); return {tied,count:top}; };
+
+  /* Biggest fan: the highest single rating. Ties: a lone fan beats a crowd, then the score furthest above the game's average. */
+  function fanPick(sc){
+    let best=null;
+    L3.forEach(l=>{ const s=sc[l]; if(!s||!s.n||!s.dist) return; let top=0; for(let i=9;i>=0;i--) if(s.dist[i]>0){ top=i+1; break; } if(!top) return;
+      const c={l,score:top,count:s.dist[top-1],gap:top-s.avg};
+      if(!best || c.score>best.score || (c.score===best.score && (c.count<best.count || (c.count===best.count && c.gap>best.gap)))) best=c; });
+    return best;
+  }
+  // most divisive: biggest spread of scores (standard deviation)
+  function spreadPick(sc){
+    let best=null;
+    L3.forEach(l=>{ const s=sc[l]; if(!s||s.n<2||!s.dist) return; const v=s.dist.reduce((a,c,i)=>a+c*(i+1-s.avg)**2,0)/s.n; const sd=Math.sqrt(v);
+      if(sd>0.05 && (!best||sd>best.sd)) best={l,sd}; });
+    return best;
+  }
+  // harshest / most generous judge: lowest / highest average score given (at least 2 games rated). Needs gj_fans.raters.
+  function raterPicks(list){
+    const el2=(list||[]).filter(r=>r&&r.name&&r.n>=2&&typeof r.avg==="number"); if(el2.length<2) return null;
+    const lo=Math.min(...el2.map(r=>r.avg)), hi=Math.max(...el2.map(r=>r.avg)); if(lo===hi) return null;
+    const pick=v=>{ const w=el2.filter(r=>r.avg===v); return {names:w.map(r=>r.name),avg:v,n:w.length===1?w[0].n:null}; };
+    return {harsh:pick(lo),generous:pick(hi)};
+  }
+  const topOf=(obj,min)=>{ const w=winnerOf(obj); return w&&w.count>=(min||1)? w : null; };
+  const names=(arr)=>arr.length<=3? arr.join(" & ") : arr.slice(0,2).join(", ")+" & "+(arr.length-2)+" ακόμα";
+  const gnames=ls=>ls.map(l=>GJ.gname(l)).join(" & ");
+
+  /* Every award as data: shown as cards on the page and as slides in the ceremony.
+     {em, t, dsc, games:[winning letters], nom:true if all games are nominees, win, meta, rows:[{win,meta,l}], wide, lvl:applause 1-3} */
+  function voted(d){
+    return [["visual","🎨","Καλύτερο οπτικό","Το παιχνίδι που δείχνει καλύτερα"],["bug","🪲","Χρυσό bug","Το πιο αστείο glitch"]].map(([k,em,t,dsc])=>{
+      const w=winnerOf(d.awards&&d.awards[k]);
+      return {key:k,em,t,dsc,nom:true,lvl:2,games:w?w.tied:[],win:w&&gnames(w.tied),meta:w&&(w.count+(w.count===1?" ψήφος":" ψήφοι")+(w.tied.length>1?" · ισοπαλία":"")),empty:"Καμία ψήφος ακόμα."};
+    });
+  }
+  function special(d,sc,basis,X){
+    X=X||{}; const out=[], MANUAL=GJ.MANUAL||{};
+    // 🎮 most played
+    if(X.st){ const t={}; L3.forEach(l=>{ if(X.st[l]&&X.st[l].seconds) t[l]=X.st[l].seconds; }); const w=topOf(t,60);
+      out.push({key:"played",em:"🎮",t:"Δεν το άφηναν",dsc:"Οι περισσότερες ώρες παιχνιδιού",nom:true,lvl:1,games:w?w.tied:[],win:w&&gnames(w.tied),meta:w&&("⏱ "+GJ.fmtDur(w.count)+" συνολικά")}); }
+    // 💬 most talked about
+    if(d.comments){ const w=topOf(d.comments); out.push({key:"talk",em:"💬",t:"Πιο πολυσυζητημένο",dsc:"Τα περισσότερα σχόλια",nom:true,lvl:1,games:w?w.tied:[],win:w&&gnames(w.tied),meta:w&&(w.count+(w.count===1?" σχόλιο":" σχόλια"))}); }
+    // reactions
+    if(X.rc){ [["music","🎵","Καλύτερος ήχος","Τα περισσότερα 🎵"],["hard","💀","Το πιο δύσκολο","Τα περισσότερα 💀"]].forEach(([k,em,t,dsc])=>{
+      const o={}; L3.forEach(l=>{ const n=X.rc[l]&&X.rc[l][k]; if(n) o[l]=n; }); const w=topOf(o);
+      out.push({key:k,em,t,dsc,nom:true,lvl:1,games:w?w.tied:[],win:w&&gnames(w.tied),meta:w&&(w.count+" αντιδράσεις")}); }); }
+    // 🎢 most divisive
+    const sp=spreadPick(sc);
+    out.push({key:"spread",em:"🎢",t:"Πιο διχαστικό",dsc:"Οι βαθμοί του απείχαν πιο πολύ",nom:true,lvl:1,games:sp?[sp.l]:[],win:sp&&GJ.gname(sp.l),meta:sp&&("απόκλιση ±"+sp.sd.toFixed(1))});
+    // ⚡ speedrunners: fastest clear of each game
+    if(X.clears){ const rows=L3.map(l=>{ const r=(X.clears[l]||[]).slice().sort((a,b)=>a.seconds-b.seconds)[0]; return r? {l,win:r.name,meta:"⏱ "+GJ.fmtClock(r.seconds)+" στο "+GJ.gname(l)} : null; }).filter(Boolean);
+      if(rows.length) out.push({key:"speed",em:"⚡",t:"Speedrunner",dsc:"Ο πιο γρήγορος τερματισμός",lvl:2,games:rows.map(r=>r.l),rows}); }
+    // 😤 / 🥰 judges (needs gj_fans.raters)
+    const rp=raterPicks(X.fans&&X.fans.raters&&X.fans.raters[basis]);
+    if(rp){ const meta=r=>"Ø "+r.avg.toFixed(2)+(r.n? " σε "+r.n+" παιχνίδια":"");
+      out.push({key:"harsh",em:"😤",t:"Πιο αυστηρός κριτής",dsc:"Ο χαμηλότερος μέσος όρος",lvl:1,games:[],win:names(rp.harsh.names),meta:meta(rp.harsh)});
+      out.push({key:"generous",em:"🥰",t:"Πιο γενναιόδωρος κριτής",dsc:"Ο ψηλότερος μέσος όρος",lvl:2,games:[],win:names(rp.generous.names),meta:meta(rp.generous)}); }
+    // 💘 biggest fan (name needs gj_fans)
+    const f=fanPick(sc);
+    // 👎 biggest hater (set by the organiser)
+    if(MANUAL.hater) out.push({key:"hater",em:"👎",t:"Μεγαλύτερος hater",dsc:"Η πιο χαμηλή ατομική βαθμολογία",lvl:1,wide:true,games:[MANUAL.hater.game],win:MANUAL.hater.name,meta:"έδωσε "+MANUAL.hater.score+"/10 στο "+GJ.gname(MANUAL.hater.game)});
+    if(f){ const fn=X.fans&&X.fans[basis]&&X.fans[basis][f.l]; const who=MANUAL.fan&&MANUAL.fan.name? [MANUAL.fan.name] : fn&&fn.score===f.score&&Array.isArray(fn.names)&&fn.names.length? fn.names : null;
+      out.push({key:"fan",em:"💘",t:"Μεγαλύτερος fan",dsc:"Η πιο ψηλή ατομική βαθμολογία",lvl:2,wide:true,games:[f.l],
+        win:who? names(who) : (f.count===1? "Ένας μυστικός fan" : f.count+" fans"), meta:(who&&who.length>1||!who&&f.count>1? "έδωσαν ":"έδωσε ")+f.score+"/10 στο "+GJ.gname(f.l)}); }
+    return out;
+  }
+  // the champion (valid votes), or null before the results are out
+  const champion=d=>{ if(!d||d.released===false) return null; const r=rank((d.scores&&d.scores.valid)||{}); return r[0]||null; };
+  let P=null;
+  // released results + public extras, fetched once per page
+  const load=()=> P||(P=(async()=>{ let d=null; try{ d=await GJ.rpc("gj_results",{p_key:null}); }catch(e){} if(!d||d.released===false) return {d:null};
+    const [st,rc,cl,fans]=await Promise.all([GJ.stats().catch(()=>null),GJ.reactCounts().catch(()=>null),Promise.all(L3.map(L=>GJ.clearsList(L).catch(()=>[]))),GJ.rpc("gj_fans",{p_key:null}).catch(()=>null)]);
+    return {d,X:{st,rc,clears:{A:cl[0],B:cl[1],C:cl[2]},fans}}; })());
+  GJ.RES={rank,winnerOf,fanPick,spreadPick,raterPicks,topOf,names,gnames,voted,special,champion,load};
+})();
+
 /* test-mode banner */
 (function(){ if(!window.GJ||!GJ.TEST) return;
   const add=()=>{ const b=document.createElement("button"); b.type="button"; b.className="gj-test"; b.innerHTML="🧪 TEST MODE <u>Έξοδος</u>";
