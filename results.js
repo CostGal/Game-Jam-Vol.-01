@@ -6,7 +6,7 @@
   const esc=GJ.esc, L3=["A","B","C"];
   const MEDAL=["🥇","🥈","🥉"];
   const THUMB={A:"games/a/thumb.jpg",B:"games/b/thumb.jpg",C:"games/c/thumb.jpg"};
-  let BASIS="valid", DATA=null, timer=null, confettiOn=false;
+  let BASIS="valid", DATA=null, EXTRA=null, timer=null, confettiOn=false;
   try{ parent.postMessage({gj:"nav",path:"results.html",title:document.title},location.origin); }catch(e){}
 
   /* organiser key: #key=… (stored once) */
@@ -18,6 +18,14 @@
   const fmt=ms=>{ const s=Math.max(0,Math.floor(ms/1000)), d=Math.floor(s/86400), h=Math.floor(s%86400/3600), mi=Math.floor(s%3600/60), x=s%60, p=n=>String(n).padStart(2,"0"); return (d?d+"μ ":"")+p(h)+":"+p(mi)+":"+p(x); };
 
   async function fetchData(){ try{ return await GJ.rpc("gj_results",{p_key:KEY}); }catch(e){ return null; } }
+  // fan names (optional RPC: works without it, the fan then shows without a name)
+  async function fetchFans(){ try{ return await GJ.rpc("gj_fans",{p_key:KEY}); }catch(e){ return null; } }
+  // public extras for the special awards: play time, reactions, fastest clears
+  async function fetchExtra(){
+    const [st,rc,cl,fans]=await Promise.all([GJ.stats().catch(()=>null),GJ.reactCounts().catch(()=>null),
+      Promise.all(L3.map(L=>GJ.clearsList(L).catch(()=>[]))),fetchFans()]);
+    return {st,rc,clears:{A:cl[0],B:cl[1],C:cl[2]},fans};
+  }
 
   function rank(sc){
     const arr=L3.filter(l=>sc[l]&&sc[l].n>0).map(l=>Object.assign({l},sc[l]));
@@ -25,6 +33,56 @@
     return arr;
   }
   const winnerOf=(obj)=>{ if(!obj) return null; const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]); if(!e.length) return null; const top=e[0][1]; const tied=e.filter(x=>x[1]===top).map(x=>x[0]); return {tied,count:top}; };
+
+  /* Biggest fan: the highest single rating. Ties: a lone fan beats a crowd, then the score furthest above the game's average. */
+  function fanPick(sc){
+    let best=null;
+    L3.forEach(l=>{ const s=sc[l]; if(!s||!s.n||!s.dist) return; let top=0; for(let i=9;i>=0;i--) if(s.dist[i]>0){ top=i+1; break; } if(!top) return;
+      const c={l,score:top,count:s.dist[top-1],gap:top-s.avg};
+      if(!best || c.score>best.score || (c.score===best.score && (c.count<best.count || (c.count===best.count && c.gap>best.gap)))) best=c; });
+    return best;
+  }
+  // most divisive: biggest spread of scores (standard deviation)
+  function spreadPick(sc){
+    let best=null;
+    L3.forEach(l=>{ const s=sc[l]; if(!s||s.n<2||!s.dist) return; const v=s.dist.reduce((a,c,i)=>a+c*(i+1-s.avg)**2,0)/s.n; const sd=Math.sqrt(v);
+      if(sd>0.05 && (!best||sd>best.sd)) best={l,sd}; });
+    return best;
+  }
+  const topOf=(obj,min)=>{ const w=winnerOf(obj); return w&&w.count>=(min||1)? w : null; };
+  const names=(arr)=>arr.length<=3? arr.join(" & ") : arr.slice(0,2).join(", ")+" & "+(arr.length-2)+" ακόμα";
+  function awCard(title,dsc,win,meta){
+    const c=el("div","glass aw"); c.append(el("b",null,title), el("p","by",dsc));
+    if(!win) c.append(el("p","empty","Δεν βγήκε νικητής."));
+    else { c.append(el("div","awn",win)); if(meta) c.append(el("p","by",meta)); }
+    return c;
+  }
+
+  function specialAwards(d,sc){
+    const X=EXTRA||{}, out=[];
+    // 💘 biggest fan
+    const f=fanPick(sc);
+    if(f){ const fn=X.fans&&X.fans[BASIS]&&X.fans[BASIS][f.l]; const who=fn&&fn.score===f.score&&Array.isArray(fn.names)&&fn.names.length? fn.names : null;
+      const win=who? names(who) : (f.count===1? "Ένας μυστικός fan" : f.count+" fans");
+      const fc=awCard("💘 Μεγαλύτερος fan","Η πιο ψηλή ατομική βαθμολογία", win, (who||f.count===1? "έδωσε ":"έδωσαν ")+f.score+"/10 στο "+GJ.gname(f.l)); fc.classList.add("wide"); out.push(fc); }
+    // 🎢 most divisive
+    const sp=spreadPick(sc);
+    out.push(awCard("🎢 Πιο διχαστικό","Οι βαθμοί του απείχαν πιο πολύ", sp&&GJ.gname(sp.l), sp&&("απόκλιση ±"+sp.sd.toFixed(1))));
+    // 🎮 most played
+    if(X.st){ const t={}; L3.forEach(l=>{ if(X.st[l]&&X.st[l].seconds) t[l]=X.st[l].seconds; }); const w=topOf(t,60);
+      out.push(awCard("🎮 Δεν το άφηναν","Οι περισσότερες ώρες παιχνιδιού", w&&w.tied.map(GJ.gname).join(" & "), w&&("⏱ "+GJ.fmtDur(w.count)+" συνολικά"))); }
+    // 💬 most talked about
+    if(d.comments){ const w=topOf(d.comments); out.push(awCard("💬 Πιο πολυσυζητημένο","Τα περισσότερα σχόλια", w&&w.tied.map(GJ.gname).join(" & "), w&&(w.count+(w.count===1?" σχόλιο":" σχόλια")))); }
+    // reactions
+    if(X.rc){ [["music","🎵 Καλύτερος ήχος","Τα περισσότερα 🎵"],["hard","💀 Το πιο δύσκολο","Τα περισσότερα 💀"]].forEach(([k,t,dsc])=>{
+      const o={}; L3.forEach(l=>{ const n=X.rc[l]&&X.rc[l][k]; if(n) o[l]=n; }); const w=topOf(o);
+      out.push(awCard(t,dsc, w&&w.tied.map(GJ.gname).join(" & "), w&&(w.count+" αντιδράσεις"))); }); }
+    // ⚡ speedrunners: fastest clear of each game
+    if(X.clears){ const rows=L3.map(l=>{ const r=(X.clears[l]||[]).slice().sort((a,b)=>a.seconds-b.seconds)[0]; return r? {l,r} : null; }).filter(Boolean);
+      if(rows.length){ const c=el("div","glass aw"); c.append(el("b",null,"⚡ Speedrunner"), el("p","by","Ο πιο γρήγορος τερματισμός"));
+        rows.forEach(({l,r})=>{ c.append(el("div","awn",r.name), el("p","by","⏱ "+GJ.fmtClock(r.seconds)+" στο "+GJ.gname(l))); }); out.push(c); } }
+    return out;
+  }
 
   function bars(dist){
     const mx=Math.max(1,...dist); const w=el("div","bars");
@@ -71,7 +129,7 @@
     app.append(list);
 
     // awards
-    app.append(el("h2",null,"Βραβεία"));
+    app.append(el("h2",null,"Βραβεία κοινού"));
     const aw=el("div","awards2");
     [["bug","🪲 Χρυσό bug","Το πιο αστείο glitch"],["visual","🎨 Καλύτερο οπτικό","Το παιχνίδι που δείχνει καλύτερα"]].forEach(([k,t,dsc])=>{
       const w=winnerOf(d.awards&&d.awards[k]); const c=el("div","glass aw"); c.append(el("b",null,t), el("p","by",dsc));
@@ -79,6 +137,9 @@
       else { const names=w.tied.map(l=>GJ.gname(l)).join(" & "); c.append(el("div","awn",names), el("p","by",w.count+(w.count===1?" ψήφος":" ψήφοι")+(w.tied.length>1?" · ισοπαλία":""))); }
       aw.append(c); });
     app.append(aw);
+    app.append(el("h2",null,"Ειδικά βραβεία"));
+    const sp=el("div","awards2"); specialAwards(d,sc).forEach(c=>sp.append(c)); app.append(sp);
+    if(!EXTRA) app.append(el("p","note2","Φορτώνω τα υπόλοιπα βραβεία…"));
     app.append(el("p","note2","Ψήφισαν "+d.voters+" άτομα"+(d.comments? " · "+Object.values(d.comments).reduce((a,b)=>a+b,0)+" σχόλια":"")+"."));
 
     // actions
@@ -99,6 +160,8 @@
       if(t-t0<6500) requestAnimationFrame(f); else cv.remove(); })(t0);
   }
 
-  async function boot(){ DATA=await fetchData(); render(); if(DATA&&DATA.released===false&&DATA.preview){ clearInterval(timer); timer=setInterval(async()=>{ const d=await fetchData(); if(d){ DATA=d; render(); } },30000); } }
+  let extraT=0;
+  async function loadExtra(){ if(Date.now()-extraT<25000) return; extraT=Date.now(); const x=await fetchExtra(); EXTRA=x; render(); }
+  async function boot(){ DATA=await fetchData(); render(); if(DATA&&(DATA.released!==false||DATA.preview)) loadExtra(); if(DATA&&DATA.released===false&&DATA.preview){ clearInterval(timer); timer=setInterval(async()=>{ const d=await fetchData(); if(d){ DATA=d; render(); loadExtra(); } },30000); } }
   boot();
 })();
