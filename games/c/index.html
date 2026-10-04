@@ -151,8 +151,9 @@
         user-select: none;
         -webkit-user-select: none;
       }
-      /* Phones held sideways (short landscape screens); desktops are unaffected. */
-      @media (orientation: landscape) and (max-height: 500px) {
+      /* Phones held sideways (short landscape touch screens); desktops are unaffected,
+         even in a short window. Same query as src/main.js. */
+      @media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
         #rotate {
           display: flex;
         }
@@ -166,7 +167,7 @@
         -webkit-touch-callout: none;
       }
     </style>
-    <script type="module" crossorigin src="./assets/index-CojQLmnQ.js"></script>
+    <script type="module" crossorigin src="./assets/index-Dc7UoP5D.js"></script>
       <style>
       /* Jam build: the host iframe may pan/zoom-guard itself; the canvas keeps touch-action:none. */
       html,

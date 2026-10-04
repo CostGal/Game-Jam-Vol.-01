@@ -3,7 +3,9 @@
 (function(){
   const B=document.body, ROOT=B.dataset.root||"", PAGE=B.dataset.page, SLUG=B.dataset.dev||"";
   const SEED={"devs": [{"slug": "kostas", "name": "Κώστας", "tagline": "Game dev · Unremembered", "bio": "", "avatar": "img/dev-kostas.png", "fav_game": "Sonic Unleashed", "traits": ["Average Gemini enjoyer", "Νομίζει ότι είναι προγραμματιστής", "Δεν του αρέσει να του κάνουν spoil"], "links": []}, {"slug": "amarildo", "name": "Αμαρίλντο", "tagline": "Game dev · Patra's Brawlers", "bio": "", "avatar": "img/dev-amarildo.png", "fav_game": "Elden Ring", "traits": ["Νομίζει ότι είναι ο Subaru", "Επαγγελματίας εισπράκτορας ταμείου ανεργίας", "Κάνει spoil"], "links": []}, {"slug": "fanis", "name": "Φάνης", "tagline": "Game dev · Descent", "bio": "", "avatar": "img/dev-fanis.png", "fav_game": "League of Legends", "traits": ["Του αρέσει το LoL χαχα", "«Θα είμαι εκεί σε 5'»", "«Ό,τι ώρα γυρίζω συνήθως»"], "links": []}], "games": [{"id": "descent", "dev_slug": "fanis", "title": "Descent", "tagline": "Σύρε αριστερά για κίνηση, πάτα δεξιά για ήχο. Περπάτα αργά, ο θόρυβος σε προδίδει.", "description": "", "thumb": "games/a/thumb.jpg", "play_url": "play.html?g=A", "jam": "Game Jam Vol. 01", "status": "live", "sort": 10, "video_url": "", "video_label": "Trailer"}, {"id": "patras-brawlers", "dev_slug": "amarildo", "title": "Patra's Brawlers", "tagline": "D-pad για κίνηση, Punch/Kick για χτυπήματα, Block για άμυνα, Special με γεμάτη μπάρα", "description": "", "thumb": "games/b/thumb.jpg", "play_url": "play.html?g=B", "jam": "Game Jam Vol. 01", "status": "live", "sort": 10, "video_url": "media/patras-brawlers-trailer.mp4", "video_label": "Trailer"}, {"id": "unremembered", "dev_slug": "kostas", "title": "Unremembered", "tagline": "Σοβαρό 2D RPG όπου οι αναμνήσεις γίνονται δύναμη.", "description": "Turn-based μάχες με parry και dodge σε πραγματικό χρόνο. Demo για το Game Jam Vol. 01.", "thumb": "games/c/thumb.jpg", "play_url": "play.html?g=C", "jam": "Game Jam Vol. 01", "status": "demo", "sort": 10, "video_url": "", "video_label": "Trailer"}]};
-  let DEVS=SEED.devs.slice(), GAMES=SEED.games.slice(), FILTER="all", EDIT=false, KEY="";
+  let DEVS=SEED.devs.slice(), GAMES=SEED.games.slice(), FILTER="all", EDIT=false, KEY="", CH=null;
+  // the Game Jam champion (after the results): cup on the game and on its developer
+  const champDev=()=>{ const d=CH&&GJ.devOf(CH.l); return d? d.slug : ""; };
   const app=document.getElementById("app");
   const el=(t,c,x)=>{ const e=document.createElement(t); if(c) e.className=c; if(x!=null) e.textContent=x; return e; };
   const U=p=>!p?"":/^(https?:|data:)/.test(p)?p:ROOT+p;
@@ -38,7 +40,8 @@
     const d=devOf(g.dev_slug);
     if(d&&showDev){ const by=el("p","by"); by.append(document.createTextNode("από ")); const a=el("a",null,d.name); a.href=ROOT+"devs/"+d.slug+"/"; by.append(a); bd.append(by); }
     if(g.tagline) bd.append(el("p","tg",g.tagline)); if(g.description) bd.append(el("p","ds",g.description));
-    const bs=el("div","badges"); if(g.jam) bs.append(el("span","bdg",g.jam)); bs.append(el("span","bdg "+g.status,ST[g.status]||g.status)); bd.append(bs);
+    const bs=el("div","badges"); const won=!!CH&&new RegExp("[?&]g="+CH.l+"\\b").test(g.play_url||"");
+    if(won){ c.classList.add("won"); bs.append(el("span","bdg cupb","🏆 Champion")); } if(g.jam) bs.append(el("span","bdg",g.jam)); bs.append(el("span","bdg "+g.status,ST[g.status]||g.status)); bd.append(bs);
     const ac=el("div","acts");
     if(g.play_url){ const a=el("a","btn","▶ Παίξε"); a.href=/^(https?:)/.test(g.play_url)?g.play_url:ROOT+g.play_url; if(/^https?:/.test(g.play_url)){ a.target="_blank"; a.rel="noopener"; } else a.target="_top"; ac.append(a); }
     if(g.video_url){ const lab=g.video_label||"Trailer"; const v=el("button","btn alt","🎬 "+lab); v.type="button"; const poster=/^media\/.+\.mp4$/.test(g.video_url)?U(g.video_url.replace(/\.mp4$/,".jpg")):""; v.onclick=()=>GJ.videoSheet(U(g.video_url),g.title+" · "+lab,poster); ac.append(v); }
@@ -67,7 +70,7 @@ function soonCard(){ const c=el("article","gc glass soon"); const bd=el("div","b
     app.append(grid);
     app.append(el("h2",null,"Οι δημιουργοί"));
     const dv=el("div","devs");
-    DEVS.forEach(d=>{ const a=el("a","dv glass"); a.href=ROOT+"devs/"+d.slug+"/"; a.append(avatar(d),el("span",null,d.name)); const n=GAMES.filter(g=>g.dev_slug===d.slug).length; a.append(el("small",null,n+(n===1?" παιχνίδι":" παιχνίδια"))); dv.append(a); });
+    DEVS.forEach(d=>{ const a=el("a","dv glass"); a.href=ROOT+"devs/"+d.slug+"/"; a.append(avatar(d),el("span",null,d.name+(champDev()===d.slug?" 🏆":""))); const n=GAMES.filter(g=>g.dev_slug===d.slug).length; a.append(el("small",null,n+(n===1?" παιχνίδι":" παιχνίδια"))); dv.append(a); });
     app.append(dv);
   }
   function renderDev(){
@@ -75,7 +78,9 @@ function soonCard(){ const c=el("article","gc glass soon"); const bd=el("div","b
     if(!d){ app.append(el("p","empty","Δεν βρέθηκε αυτό το προφίλ.")); return; }
     document.title=d.name+" · Arcade · Game Jam";
     const pf=el("section","pf glass"); const top=el("div","top"); top.append(avatar(d,"av"));
-    const nm=el("div"); nm.append(el("h1",null,d.name)); if(d.tagline) nm.append(el("p","tl",d.tagline)); if(d.fav_game) nm.append(el("span","fav","♥ "+d.fav_game)); top.append(nm); pf.append(top);
+    const isCh=champDev()===d.slug; if(isCh){ pf.classList.add("won"); const cb=el("div","cupban"); cb.append(el("span","cupi","🏆"));
+      const ct=el("div"); ct.append(el("b",null,"Game Jam Vol. 01 Champion"), el("span",null,"με το "+GJ.gname(CH.l)+" · Ø "+CH.avg.toFixed(2))); cb.append(ct); pf.append(cb); }
+    const nm=el("div"); const h1=el("h1",null,d.name); if(isCh) h1.append(el("span","cupn"," 🏆")); nm.append(h1); if(d.tagline) nm.append(el("p","tl",d.tagline)); if(d.fav_game) nm.append(el("span","fav","♥ "+d.fav_game)); top.append(nm); pf.append(top);
     if(d.bio) pf.append(el("p","bio",d.bio));
     if(d.traits&&d.traits.length){ const ul=el("ul","traits"); d.traits.forEach(t=>ul.append(el("li",null,t))); pf.append(ul); }
     if(d.links&&d.links.length){ const ls=el("div","links"); d.links.forEach(l=>{ const a=el("a","btn alt",l.label||l.url); a.href=l.url; a.target="_blank"; a.rel="noopener noreferrer"; ls.append(a); }); pf.append(ls); }
@@ -90,6 +95,7 @@ function soonCard(){ const c=el("article","gc glass soon"); const bd=el("div","b
     const all=el("a","btn alt","🕹️ Όλο το Arcade"); all.href=ROOT+"arcade/"; all.style.marginTop="22px"; app.append(all);
   }
   function render(){ PAGE==="dev"?renderDev():renderArcade(); if(STATS) paintStats(STATS); paintClr(); }
+  if(GJ.RES) GJ.RES.load().then(({d})=>{ const c=GJ.RES.champion(d); if(c){ CH=c; render(); } }).catch(()=>{});
 
   /* ---------- editors (shared bottom sheet) ---------- */
   function fld(label,id,val,opt){ opt=opt||{}; const v=esc(val);
