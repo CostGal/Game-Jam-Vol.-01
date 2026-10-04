@@ -49,6 +49,13 @@
       if(sd>0.05 && (!best||sd>best.sd)) best={l,sd}; });
     return best;
   }
+  // harshest / most generous judge: lowest / highest average score given (at least 2 games rated). Needs gj_fans.raters.
+  function raterPicks(list){
+    const el2=(list||[]).filter(r=>r&&r.name&&r.n>=2&&typeof r.avg==="number"); if(el2.length<2) return null;
+    const lo=Math.min(...el2.map(r=>r.avg)), hi=Math.max(...el2.map(r=>r.avg)); if(lo===hi) return null;
+    const pick=v=>{ const w=el2.filter(r=>r.avg===v); return {names:w.map(r=>r.name),avg:v,n:w.length===1?w[0].n:null}; };
+    return {harsh:pick(lo),generous:pick(hi)};
+  }
   const topOf=(obj,min)=>{ const w=winnerOf(obj); return w&&w.count>=(min||1)? w : null; };
   const names=(arr)=>arr.length<=3? arr.join(" & ") : arr.slice(0,2).join(", ")+" & "+(arr.length-2)+" ακόμα";
   function awCard(title,dsc,win,meta){
@@ -65,6 +72,11 @@
     if(f){ const fn=X.fans&&X.fans[BASIS]&&X.fans[BASIS][f.l]; const who=fn&&fn.score===f.score&&Array.isArray(fn.names)&&fn.names.length? fn.names : null;
       const win=who? names(who) : (f.count===1? "Ένας μυστικός fan" : f.count+" fans");
       const fc=awCard("💘 Μεγαλύτερος fan","Η πιο ψηλή ατομική βαθμολογία", win, (who||f.count===1? "έδωσε ":"έδωσαν ")+f.score+"/10 στο "+GJ.gname(f.l)); fc.classList.add("wide"); out.push(fc); }
+    // 😤 / 🥰 judges
+    const rp=raterPicks(X.fans&&X.fans.raters&&X.fans.raters[BASIS]);
+    if(rp){ const meta=r=>"Ø "+r.avg.toFixed(2)+(r.n? " σε "+r.n+" παιχνίδια":"");
+      out.push(awCard("😤 Πιο αυστηρός κριτής","Ο χαμηλότερος μέσος όρος", names(rp.harsh.names), meta(rp.harsh)));
+      out.push(awCard("🥰 Πιο γενναιόδωρος κριτής","Ο ψηλότερος μέσος όρος", names(rp.generous.names), meta(rp.generous))); }
     // 🎢 most divisive
     const sp=spreadPick(sc);
     out.push(awCard("🎢 Πιο διχαστικό","Οι βαθμοί του απείχαν πιο πολύ", sp&&GJ.gname(sp.l), sp&&("απόκλιση ±"+sp.sd.toFixed(1))));
