@@ -1,6 +1,6 @@
 /* Game Jam shell: hosts every page in an iframe so the radio (audio + beat analyser) never restarts. */
 (function(){
-  const VERSION="v16";
+  const VERSION="v17";
   const view=document.getElementById("view");
   const ALLOWED=/^(home\.html|arcade\/|devs\/[a-z0-9-]+\/|results\.html)$/;
   /* ---------- routing ---------- */
@@ -115,6 +115,7 @@
 
   /* ---------- "What's new" tour (first time on this version) ---------- */
   const SLIDES=[
+    ["🏅","Champions","Όποιος τελειώνει ένα παιχνίδι μπαίνει στη λίστα των champions, με τον χρόνο του και στατιστικά από το ίδιο το παιχνίδι. Πάτα 🏅 Champions στην κάρτα του παιχνιδιού."],
     ["🎭","Αποκαλύφθηκαν οι δημιουργοί","Κάθε παιχνίδι δείχνει πλέον τον τίτλο και τον δημιουργό του. Πάτα το όνομα για να δεις το προφίλ του."],
     ["🕹️","Arcade και προφίλ","Η βιβλιοθήκη όλων των παιχνιδιών μας, με υποσελίδα για κάθε δημιουργό. Οι ίδιοι μπορούν να προσθέτουν παιχνίδια και βίντεο."],
     ["📻","Game Jam FM","Radio κάτω δεξιά με ένταση, playlist και εξώφυλλα. Συνεχίζει να παίζει όσο γυρνάς σελίδες. Σταματά μόνο όταν παίζεις παιχνίδι."],
